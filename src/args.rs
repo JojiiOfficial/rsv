@@ -23,11 +23,14 @@ pub enum Subcommands {
 
     #[structopt(about = "Stop a service")]
     Stop(ServiceAction),
+
+    #[structopt(about = "Status a service")]
+    Status(ServiceAction),
 }
 
 #[derive(StructOpt, Debug)]
 pub struct ServiceAction {
-    service: String,
+    pub service: String,
 }
 
 impl AppArgs {
