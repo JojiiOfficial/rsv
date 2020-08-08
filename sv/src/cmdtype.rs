@@ -1,5 +1,6 @@
 /// All available Commands
 /// for runsv
+#[derive(Debug)]
 pub enum SvCommandType {
     // Runit commands
     Up,
@@ -24,22 +25,22 @@ pub enum SvCommandType {
 }
 
 impl SvCommandType {
-    pub fn value(&self) -> Option<String> {
+    pub fn value(&self) -> Option<&str> {
         let res = match *self {
-            SvCommandType::Up => "u".to_string(),
-            SvCommandType::Down => "d".to_string(),
-            SvCommandType::Once => "o".to_string(),
-            SvCommandType::Pause => "p".to_string(),
-            SvCommandType::Continue => "c".to_string(),
-            SvCommandType::Hangup => "h".to_string(),
-            SvCommandType::Alarm => "a".to_string(),
-            SvCommandType::Interrupt => "i".to_string(),
-            SvCommandType::Quit => "q".to_string(),
-            SvCommandType::USR1 => "1".to_string(),
-            SvCommandType::USR2 => "2".to_string(),
-            SvCommandType::Terminate => "t".to_string(),
-            SvCommandType::Kill => "k".to_string(),
-            SvCommandType::Exit => "e".to_string(),
+            SvCommandType::Up => "u",
+            SvCommandType::Down => "d",
+            SvCommandType::Once => "o",
+            SvCommandType::Pause => "p",
+            SvCommandType::Continue => "c",
+            SvCommandType::Hangup => "h",
+            SvCommandType::Alarm => "a",
+            SvCommandType::Interrupt => "i",
+            SvCommandType::Quit => "q",
+            SvCommandType::USR1 => "1",
+            SvCommandType::USR2 => "2",
+            SvCommandType::Terminate => "t",
+            SvCommandType::Kill => "k",
+            SvCommandType::Exit => "e",
             _ => return None,
         };
 
