@@ -6,7 +6,7 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn string(self) -> String {
+    pub fn string(&self) -> String {
         match self {
             Error::ServiceDirNotFound => "Runsvdir not found".to_string(),
             Error::ServiceNotAccessable => "Not accessable".to_string(),

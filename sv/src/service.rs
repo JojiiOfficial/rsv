@@ -1,6 +1,7 @@
 use crate::cmdtype;
 use crate::error::Error;
 use std::path::Path;
+use std::str::FromStr;
 use sysinfo::SystemExt;
 
 // A sv command
@@ -24,6 +25,21 @@ pub enum ServiceFile {
     OK,
     Stat,
     Status,
+}
+
+impl ServiceFile {
+    pub fn to_string(&self) -> &str {
+        match self {
+            ServiceFile::Run => "run",
+            ServiceFile::Finish => "finish",
+            ServiceFile::PID => "supervise/pid",
+            ServiceFile::Control => "supervise/control",
+            ServiceFile::Lock => "supervise/lock",
+            ServiceFile::OK => "supervise/ok",
+            ServiceFile::Stat => "supervise/stat",
+            ServiceFile::Status => "supervise/status",
+        }
+    }
 }
 
 impl Service {
@@ -50,8 +66,15 @@ impl Service {
         Ok(())
     }
 
-    fn get_file_path(&self, kfile: ServiceFile) -> String {
-        String::from("")
+    fn get_file_path(&self, kfile: ServiceFile) -> Option<String> {
+        let p = Path::new(&self.sv_dir)
+            .join(&self.uri)
+            .join(kfile.to_string());
+
+        match p.to_str() {
+            Some(path) => Some(String::from_str(path).unwrap()),
+            None => None,
+        }
     }
 
     /// Run a sv command
