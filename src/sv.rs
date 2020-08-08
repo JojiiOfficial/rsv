@@ -27,10 +27,11 @@ impl<'a> SvCommand<'a> {
     }
 
     fn run_sv_command(&self, arg: &str) -> (String, String) {
-        let mut args = vec![arg, self.cmd];
+        let mut args = vec![arg];
         if self.verbose {
-            // TODO
+            args.push("-v");
         }
+        args.push(self.cmd);
 
         let v = Command::new("sv").args(args).output().unwrap();
 
