@@ -37,7 +37,7 @@ fn action_to_service(action: args::ServiceAction) -> Service {
     match Service::new(action.service) {
         Ok(service) => service,
         Err(err) => {
-            eprint!("Error: {}", err.string());
+            eprint!("{}", err.string());
             process::exit(1);
         }
     }

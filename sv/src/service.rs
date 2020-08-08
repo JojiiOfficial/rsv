@@ -1,15 +1,23 @@
 use crate::cmdtype::SvCommandType;
-use crate::error::Error;
+use crate::error::{Error, OK};
+use crate::status::ServiceStatus;
+
 use std::env;
+use std::ffi::OsString;
+use std::fs::OpenOptions;
+use std::io::BufReader;
+use std::io::{Read, Write};
 use std::path::Path;
-use std::str::FromStr;
+
 use sysinfo::SystemExt;
+
+pub const SRC_DIR: &str = "/etc/runit/sv/";
 
 // A sv command
 #[derive(Debug)]
 pub struct Service {
-    uri: String,
-    sv_dir: String,
+    pub uri: String,
+    pub sv_dir: String,
 }
 
 pub enum ServiceFile {
@@ -49,7 +57,7 @@ impl Service {
         // Get service directory
         let sv_dir = match get_svdir() {
             Some(v) => v,
-            None => return Err(Error::ServiceNotAccessable),
+            None => return Err(Error::DirNotFound(uri.clone())),
         };
 
         let service = Service { uri, sv_dir };
@@ -61,45 +69,50 @@ impl Service {
     // Check given service
     fn check(&self) -> Result<(), Error> {
         if !is_path(&self.sv_dir) {
-            return Err(Error::ServiceDirNotFound);
+            return Err(Error::DirNotFound(self.uri.clone()));
         }
 
         Ok(())
     }
 
-    pub fn get_file_path(&self, kfile: ServiceFile) -> Option<String> {
-        let p = Path::new(&self.sv_dir)
+    pub fn get_file_path(&self, kfile: ServiceFile) -> OsString {
+        let a = Path::new(&self.sv_dir)
             .join(&self.uri)
             .join(kfile.to_string());
 
-        match p.to_str() {
-            Some(path) => Some(String::from_str(path).unwrap()),
-            None => None,
-        }
+        return OsString::from(&a.as_os_str());
     }
 
     /// Run a sv command
     pub fn run(&self, cmd: SvCommandType) -> String {
         match cmd {
             SvCommandType::Status => self.status(),
-            SvCommandType::Down => self.down(),
-            SvCommandType::Up => self.up(),
             SvCommandType::Enable => self.enable(),
             SvCommandType::Disable => self.disable(),
 
-            _ => "not yet implemented".to_string(),
+            _ => self.run_control_cmd(cmd),
         }
     }
 
+    pub fn run_control_cmd(&self, cmd: SvCommandType) -> String {
+        let control_path = self.get_file_path(ServiceFile::Control);
+
+        let mut f = match OpenOptions::new().write(true).open(&control_path) {
+            Ok(file) => file,
+            Err(_) => return Error::DirNotFound(self.uri.clone()).string(),
+        };
+
+        if let Err(_) = f.write_all(cmd.value().unwrap().as_bytes()) {
+            return Error::DirNotFound(self.uri.clone()).string();
+        };
+
+        format!("{}: {}:", OK, self.uri)
+    }
+
     pub fn status(&self) -> String {
-        "".to_string()
-    }
+        let status = self.read_status().unwrap();
+        println!("{:#?}", status);
 
-    pub fn up(&self) -> String {
-        "".to_string()
-    }
-
-    pub fn down(&self) -> String {
         "".to_string()
     }
 
@@ -109,6 +122,29 @@ impl Service {
 
     pub fn disable(&self) -> String {
         "".to_string()
+    }
+
+    fn read_status(&self) -> Option<ServiceStatus> {
+        let status_path = self.get_file_path(ServiceFile::Status);
+        let f = match OpenOptions::new().read(true).open(&status_path) {
+            Ok(file) => file,
+            Err(e) => {
+                eprintln!("{}", e);
+                return None;
+            }
+        };
+
+        let mut f = BufReader::new(f);
+        let mut buff = [0; 20];
+        f.read_exact(&mut buff).expect("read error");
+
+        match ServiceStatus::new_by_buff(self, buff) {
+            Ok(s) => Some(s),
+            Err(err) => {
+                eprintln!("{}", err.string());
+                None
+            }
+        }
     }
 }
 
