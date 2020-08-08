@@ -1,75 +1,74 @@
 use crate::args::ServiceAction;
-use std::process::Command;
 
+// A sv command
 struct SvCommand<'a> {
-    cmd: &'a str,
-    verbose: bool,
+    service: &'a str,
+    cmd: SvCommandType,
 }
 
 impl<'a> SvCommand<'a> {
-    fn new(saction: &'a ServiceAction) -> SvCommand<'a> {
-        SvCommand {
-            cmd: saction.service.as_str(),
-            verbose: saction.verbose,
-        }
+    /// Create a new SvCommand object
+    fn new(cmd: SvCommandType, service: &'a str) -> SvCommand<'a> {
+        SvCommand { service, cmd }
     }
 
-    fn start(&self) -> (String, String) {
-        self.run_sv_command("start")
-    }
-
-    fn stop_sv(&self) -> (String, String) {
-        self.run_sv_command("stop")
-    }
-
-    fn status_sv(&self) -> (String, String) {
-        self.run_sv_command("status")
-    }
-
-    fn run_sv_command(&self, arg: &str) -> (String, String) {
-        let mut args = vec![arg];
-        if self.verbose {
-            args.push("-v");
-        }
-        args.push(self.cmd);
-
-        let v = Command::new("sv").args(args).output().unwrap();
-
-        // Return stdout and stderr inside a tulp
-        (
-            String::from_utf8(v.stdout).unwrap(),
-            String::from_utf8(v.stderr).unwrap(),
-        )
+    /// Run the sv command
+    fn run(&self) -> String {
+        "".to_string()
     }
 }
 
-pub fn print_output(res: (String, String)) {
-    let stdout = res.0;
-    let stderr = res.1;
+/// All available Commands
+/// for runsv
+pub enum SvCommandType {
+    Up,
+    Down,
+    Once,
+    Pause,
+    Continue,
+    Hangup,
+    Alarm,
+    Interrupt,
+    Quit,
+    USR1,
+    USR2,
+    Terminate,
+    Kill,
+    Exit,
+}
 
-    if stdout.len() > 0 {
-        print!("{}", stdout);
-    }
-
-    if stderr.len() > 0 {
-        eprint!("{}", stderr);
+impl SvCommandType {
+    fn value(&self) -> String {
+        match *self {
+            SvCommandType::Up => "u".to_string(),
+            SvCommandType::Down => "d".to_string(),
+            SvCommandType::Once => "o".to_string(),
+            SvCommandType::Pause => "p".to_string(),
+            SvCommandType::Continue => "c".to_string(),
+            SvCommandType::Hangup => "h".to_string(),
+            SvCommandType::Alarm => "a".to_string(),
+            SvCommandType::Interrupt => "i".to_string(),
+            SvCommandType::Quit => "q".to_string(),
+            SvCommandType::USR1 => "1".to_string(),
+            SvCommandType::USR2 => "2".to_string(),
+            SvCommandType::Terminate => "t".to_string(),
+            SvCommandType::Kill => "k".to_string(),
+            SvCommandType::Exit => "e".to_string(),
+        }
     }
 }
 
 // Start a service
 pub fn start(opts: ServiceAction) {
-    let serv = SvCommand::new(&opts);
-    print_output(serv.start());
+    let serv = SvCommand::new(SvCommandType::Up, opts.service.as_str());
 }
 
 // Get status of a service
 pub fn status(opts: ServiceAction) {
-    let serv = SvCommand::new(&opts);
-    print_output(serv.status_sv());
+    // TODO
 }
 
 // Stop a service
 pub fn stop(opts: ServiceAction) {
-    let serv = SvCommand::new(&opts);
-    print_output(serv.stop_sv());
+    let serv = SvCommand::new(SvCommandType::Down, opts.service.as_str());
 }
