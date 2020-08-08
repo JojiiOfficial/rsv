@@ -1,24 +1,45 @@
+use crate::args::ServiceAction;
 use std::process::Command;
 
-pub fn start(cmd: &str) -> (String, String) {
-    run_sv_command(&["start", cmd])
+struct SvCommand<'a> {
+    cmd: &'a str,
+    verbose: bool,
 }
 
-pub fn stop(cmd: &str) -> (String, String) {
-    run_sv_command(&["stop", cmd])
-}
+impl<'a> SvCommand<'a> {
+    fn new(saction: &'a ServiceAction) -> SvCommand<'a> {
+        SvCommand {
+            cmd: saction.service.as_str(),
+            verbose: saction.verbose,
+        }
+    }
 
-pub fn status(cmd: &str) -> (String, String) {
-    run_sv_command(&["status", cmd])
-}
+    fn start(&self) -> (String, String) {
+        self.run_sv_command("start")
+    }
 
-fn run_sv_command(args: &[&str]) -> (String, String) {
-    let v = Command::new("sv").args(args).output().unwrap();
+    fn stop_sv(&self) -> (String, String) {
+        self.run_sv_command("stop")
+    }
 
-    (
-        String::from_utf8(v.stdout).unwrap(),
-        String::from_utf8(v.stderr).unwrap(),
-    )
+    fn status_sv(&self) -> (String, String) {
+        self.run_sv_command("status")
+    }
+
+    fn run_sv_command(&self, arg: &str) -> (String, String) {
+        let mut args = vec![arg, self.cmd];
+        if self.verbose {
+            // TODO
+        }
+
+        let v = Command::new("sv").args(args).output().unwrap();
+
+        // Return stdout and stderr inside a tulp
+        (
+            String::from_utf8(v.stdout).unwrap(),
+            String::from_utf8(v.stderr).unwrap(),
+        )
+    }
 }
 
 pub fn print_output(res: (String, String)) {
@@ -32,4 +53,22 @@ pub fn print_output(res: (String, String)) {
     if stderr.len() > 0 {
         eprint!("{}", stderr);
     }
+}
+
+// Start a service
+pub fn start(opts: ServiceAction) {
+    let serv = SvCommand::new(&opts);
+    print_output(serv.start());
+}
+
+// Get status of a service
+pub fn status(opts: ServiceAction) {
+    let serv = SvCommand::new(&opts);
+    print_output(serv.status_sv());
+}
+
+// Stop a service
+pub fn stop(opts: ServiceAction) {
+    let serv = SvCommand::new(&opts);
+    print_output(serv.stop_sv());
 }
