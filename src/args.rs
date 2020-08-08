@@ -27,7 +27,7 @@ pub enum Subcommands {
     #[structopt(about = "Status a service")]
     Status(ServiceAction),
 
-    #[structopt(about = "Restart a service")]
+    #[structopt(about = "Reload a service")]
     Reload(ServiceAction),
 
     #[structopt(about = "Restart a service")]
@@ -37,9 +37,6 @@ pub enum Subcommands {
 #[derive(StructOpt, Debug)]
 pub struct ServiceAction {
     pub service: String,
-
-    #[structopt(short, long)]
-    pub verbose: bool,
 }
 
 impl AppArgs {

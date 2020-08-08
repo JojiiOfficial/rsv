@@ -1,8 +1,6 @@
 mod args;
-mod disable;
-mod enable;
 mod run;
-mod sv;
+use sv;
 
 fn main() {
     let opt = args::AppArgs::parse();

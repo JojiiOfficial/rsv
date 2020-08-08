@@ -1,26 +1,7 @@
-use crate::args::ServiceAction;
-
-// A sv command
-struct SvCommand<'a> {
-    service: &'a str,
-    cmd: SvCommandType,
-}
-
-impl<'a> SvCommand<'a> {
-    /// Create a new SvCommand object
-    fn new(cmd: SvCommandType, service: &'a str) -> SvCommand<'a> {
-        SvCommand { service, cmd }
-    }
-
-    /// Run the sv command
-    fn run(&self) -> String {
-        "".to_string()
-    }
-}
-
 /// All available Commands
 /// for runsv
 pub enum SvCommandType {
+    // Runit commands
     Up,
     Down,
     Once,
@@ -35,11 +16,16 @@ pub enum SvCommandType {
     Terminate,
     Kill,
     Exit,
+
+    // Custom commands
+    Disable,
+    Enable,
+    Status,
 }
 
 impl SvCommandType {
-    fn value(&self) -> String {
-        match *self {
+    pub fn value(&self) -> Option<String> {
+        let res = match *self {
             SvCommandType::Up => "u".to_string(),
             SvCommandType::Down => "d".to_string(),
             SvCommandType::Once => "o".to_string(),
@@ -54,21 +40,9 @@ impl SvCommandType {
             SvCommandType::Terminate => "t".to_string(),
             SvCommandType::Kill => "k".to_string(),
             SvCommandType::Exit => "e".to_string(),
-        }
+            _ => return None,
+        };
+
+        Some(res)
     }
-}
-
-// Start a service
-pub fn start(opts: ServiceAction) {
-    let serv = SvCommand::new(SvCommandType::Up, opts.service.as_str());
-}
-
-// Get status of a service
-pub fn status(opts: ServiceAction) {
-    // TODO
-}
-
-// Stop a service
-pub fn stop(opts: ServiceAction) {
-    let serv = SvCommand::new(SvCommandType::Down, opts.service.as_str());
 }

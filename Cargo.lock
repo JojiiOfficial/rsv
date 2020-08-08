@@ -79,6 +79,7 @@ name = "runitsv"
 version = "0.1.0"
 dependencies = [
  "structopt",
+ "sv",
 ]
 
 [[package]]
@@ -104,6 +105,10 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "sv"
+version = "0.1.0"
 
 [[package]]
 name = "syn"
