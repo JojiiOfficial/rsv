@@ -10,9 +10,8 @@ pub fn run(opts: args::AppArgs) {
 }
 
 // Run desired service
-fn run_service_command(service: Service, cmdType: SvCommandType) {
-    println!("{:#?}", service);
-    println!("{:#?}", cmdType);
+fn run_service_command(service: Service, cmd_type: SvCommandType) {
+    println!("{}", service.run(cmd_type));
 }
 
 // parse the subcommands
@@ -37,7 +36,7 @@ fn action_to_service(action: args::ServiceAction) -> Service {
     match Service::new(action.service) {
         Ok(service) => service,
         Err(err) => {
-            eprint!("{:#?}", err);
+            eprint!("Error: {}", err.string());
             process::exit(1);
         }
     }
