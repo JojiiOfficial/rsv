@@ -2,9 +2,6 @@ pub const FATAL: &str = "fatal";
 pub const FAIL: &str = "fail";
 pub const WARN: &str = "warning";
 pub const OK: &str = "ok";
-pub const RUN: &str = "run";
-pub const FINISH: &str = "finish";
-pub const DOWN: &str = "down";
 pub const TIMEOUT: &str = "timeout";
 pub const KILL: &str = "kill";
 

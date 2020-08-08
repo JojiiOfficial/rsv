@@ -2,6 +2,10 @@ use crate::error::Error;
 use crate::service::Service;
 use std::time::{Duration, SystemTime};
 
+pub const FINISH: &str = "finish";
+pub const RUN: &str = "run";
+pub const DOWN: &str = "down";
+
 #[derive(Debug)]
 pub struct ServiceStatus {
     pub pid: i32,
@@ -14,6 +18,16 @@ pub enum ServiceState {
     Down,
     Run,
     Finish,
+}
+
+impl ServiceState {
+    fn value(&self) -> &str {
+        match self {
+            ServiceState::Down => DOWN,
+            ServiceState::Run => RUN,
+            ServiceState::Finish => FINISH,
+        }
+    }
 }
 
 impl ServiceStatus {
