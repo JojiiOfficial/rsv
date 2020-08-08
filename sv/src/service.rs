@@ -1,5 +1,6 @@
-use crate::cmdtype;
+use crate::cmdtype::SvCommandType;
 use crate::error::Error;
+use std::env;
 use std::path::Path;
 use std::str::FromStr;
 use sysinfo::SystemExt;
@@ -66,7 +67,7 @@ impl Service {
         Ok(())
     }
 
-    fn get_file_path(&self, kfile: ServiceFile) -> Option<String> {
+    pub fn get_file_path(&self, kfile: ServiceFile) -> Option<String> {
         let p = Path::new(&self.sv_dir)
             .join(&self.uri)
             .join(kfile.to_string());
@@ -78,13 +79,46 @@ impl Service {
     }
 
     /// Run a sv command
-    pub fn run(&self, _cmd: cmdtype::SvCommandType) -> String {
+    pub fn run(&self, cmd: SvCommandType) -> String {
+        match cmd {
+            SvCommandType::Status => self.status(),
+            SvCommandType::Down => self.down(),
+            SvCommandType::Up => self.up(),
+            SvCommandType::Enable => self.enable(),
+            SvCommandType::Disable => self.disable(),
+
+            _ => "not yet implemented".to_string(),
+        }
+    }
+
+    pub fn status(&self) -> String {
+        "".to_string()
+    }
+
+    pub fn up(&self) -> String {
+        "".to_string()
+    }
+
+    pub fn down(&self) -> String {
+        "".to_string()
+    }
+
+    pub fn enable(&self) -> String {
+        "".to_string()
+    }
+
+    pub fn disable(&self) -> String {
         "".to_string()
     }
 }
 
 // Try to get service dir
 fn get_svdir() -> Option<String> {
+    // Check environment variable first
+    if let Ok(var) = env::var("SVDIR") {
+        return Some(var);
+    }
+
     let sys = sysinfo::System::new();
     let mut was_p = false;
 
@@ -93,7 +127,7 @@ fn get_svdir() -> Option<String> {
             continue;
         }
 
-        for arg in &v.cmd {
+        for arg in v.cmd.iter() {
             if arg == "-P" {
                 was_p = true;
                 continue;

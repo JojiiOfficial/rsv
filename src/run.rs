@@ -11,7 +11,7 @@ pub fn run(opts: args::AppArgs) {
 
 // Run desired service
 fn run_service_command(service: Service, cmd_type: SvCommandType) {
-    println!("{}", service.run(cmd_type));
+    print!("{}", service.run(cmd_type));
 }
 
 // parse the subcommands
@@ -22,6 +22,7 @@ fn parse_subcommands(cmds: args::Subcommands) -> (Service, SvCommandType) {
         args::Subcommands::Start(action) => (action, SvCommandType::Up),
         args::Subcommands::Stop(action) => (action, SvCommandType::Down),
         args::Subcommands::Status(action) => (action, SvCommandType::Status),
+
         _ => {
             println!("not yet implemented");
             process::exit(1);
