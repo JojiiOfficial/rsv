@@ -21,7 +21,7 @@ pub enum ServiceState {
 }
 
 impl ServiceState {
-    fn value(&self) -> &str {
+    pub fn value(&self) -> &str {
         match self {
             ServiceState::Down => DOWN,
             ServiceState::Run => RUN,
