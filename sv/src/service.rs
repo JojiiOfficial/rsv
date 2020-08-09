@@ -3,6 +3,7 @@ use crate::error::{Error, OK};
 use crate::status::ServiceStatus;
 
 use std::env;
+use std::error;
 use std::ffi::OsString;
 use std::fs::OpenOptions;
 use std::io::BufReader;
@@ -84,14 +85,14 @@ impl Service {
     }
 
     /// Run a sv command
-    pub fn run(&self, cmd: SvCommandType) -> String {
-        match cmd {
-            SvCommandType::Status => self.status(),
+    pub fn run(&self, cmd: SvCommandType) -> Result<String, Box<dyn error::Error>> {
+        Ok(match cmd {
+            SvCommandType::Status => self.status()?,
             SvCommandType::Enable => self.enable(),
             SvCommandType::Disable => self.disable(),
 
             _ => self.run_control_cmd(cmd),
-        }
+        })
     }
 
     pub fn run_control_cmd(&self, cmd: SvCommandType) -> String {
@@ -109,11 +110,11 @@ impl Service {
         format!("{}: {}:", OK, self.uri)
     }
 
-    pub fn status(&self) -> String {
-        let status = self.read_status().unwrap();
+    pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
+        let status = self.read_status()?;
         println!("{:#?}", status);
 
-        "".to_string()
+        Ok("".to_string())
     }
 
     pub fn enable(&self) -> String {
@@ -124,27 +125,16 @@ impl Service {
         "".to_string()
     }
 
-    fn read_status(&self) -> Option<ServiceStatus> {
+    fn read_status(&self) -> Result<ServiceStatus, Box<dyn error::Error>> {
         let status_path = self.get_file_path(ServiceFile::Status);
-        let f = match OpenOptions::new().read(true).open(&status_path) {
-            Ok(file) => file,
-            Err(e) => {
-                eprintln!("{}", e);
-                return None;
-            }
-        };
+        let f = OpenOptions::new().read(true).open(&status_path)?;
 
         let mut f = BufReader::new(f);
         let mut buff = [0; 20];
         f.read_exact(&mut buff).expect("read error");
 
-        match ServiceStatus::new_by_buff(self, buff) {
-            Ok(s) => Some(s),
-            Err(err) => {
-                eprintln!("{}", err.string());
-                None
-            }
-        }
+        let service = ServiceStatus::new_by_buff(self, buff)?;
+        return Ok(service);
     }
 }
 

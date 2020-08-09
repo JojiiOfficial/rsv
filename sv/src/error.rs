@@ -1,3 +1,6 @@
+use std::error;
+use std::fmt;
+
 pub const FATAL: &str = "fatal";
 pub const FAIL: &str = "fail";
 pub const WARN: &str = "warning";
@@ -11,6 +14,14 @@ pub enum Error {
     ParsingStatus(String),
     SuperviseAccessDenied(String),
 }
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({})", self.string())
+    }
+}
+
+impl error::Error for Error {}
 
 impl Error {
     pub fn string(&self) -> String {

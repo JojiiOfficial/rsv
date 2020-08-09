@@ -11,7 +11,10 @@ pub fn run(opts: args::AppArgs) {
 
 // Run desired service
 fn run_service_command(service: Service, cmd_type: SvCommandType) {
-    print!("{}", service.run(cmd_type));
+    match service.run(cmd_type) {
+        Ok(s) => print!("{}", s),
+        Err(e) => eprint!("An error occured: {}", e),
+    }
 }
 
 // parse the subcommands
