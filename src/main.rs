@@ -1,6 +1,6 @@
 mod args;
-mod conf;
 mod run;
+use config::conf;
 
 fn main() {
     let settings = match conf::Settings::new() {
@@ -12,5 +12,9 @@ fn main() {
     };
 
     let opt = args::AppArgs::parse();
-    run::run(opt);
+
+    match run::run(opt, settings) {
+        Ok(s) => print!("{}", s),
+        Err(e) => eprint!("An error occured: {}", e),
+    }
 }

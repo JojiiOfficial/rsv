@@ -10,6 +10,7 @@ use std::io::BufReader;
 use std::io::{Read, Write};
 use std::path::Path;
 
+use config::conf;
 use sysinfo::SystemExt;
 
 pub const SRC_DIR: &str = "/etc/runit/sv/";
@@ -54,9 +55,9 @@ impl ServiceFile {
 
 impl Service {
     /// Create a new SvCommand object
-    pub fn new(uri: String) -> Result<Service, Error> {
+    pub fn new(uri: String, settings: &conf::Settings) -> Result<Service, Error> {
         // Get service directory
-        let sv_dir = match get_svdir() {
+        let sv_dir = match get_svdir(&settings) {
             Some(v) => v,
             None => return Err(Error::DirNotFound(uri.clone())),
         };
@@ -139,10 +140,14 @@ impl Service {
 }
 
 // Try to get service dir
-fn get_svdir() -> Option<String> {
+fn get_svdir(settings: &conf::Settings) -> Option<String> {
     // Check environment variable first
     if let Ok(var) = env::var("SVDIR") {
         return Some(var);
+    }
+
+    if settings.runsv_dir.len() > 0 && is_path(&settings.runsv_dir.as_str()) {
+        return Some(settings.runsv_dir.clone());
     }
 
     let sys = sysinfo::System::new();

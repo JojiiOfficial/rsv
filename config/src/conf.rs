@@ -11,8 +11,8 @@ pub const DEFAULT_CONF_FILE: &str = "default.conf";
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
-    runsv_dir: String,
-    service_path: String,
+    pub runsv_dir: String,
+    pub service_path: String,
 }
 
 impl Settings {
@@ -30,12 +30,19 @@ impl Settings {
             f.read_to_string(&mut buff)?;
             settings = serde_yaml::from_str(&buff)?;
         } else {
-            let mut f = File::create(file)?;
             settings = Settings::get_default();
-            f.write_all(serde_yaml::to_string(&settings)?.as_bytes())?;
+            settings.save()?;
         }
 
         Ok(settings)
+    }
+
+    pub fn save(&self) -> Result<(), Box<dyn error::Error>> {
+        let file = path::Path::new(DEFAULT_CONF_PATH).join(DEFAULT_CONF_FILE);
+        let mut f = File::create(file)?;
+        f.write_all(serde_yaml::to_string(self)?.as_bytes())?;
+
+        Ok(())
     }
 
     pub fn get_default() -> Settings {

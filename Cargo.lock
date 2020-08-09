@@ -24,6 +24,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "config"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_yaml",
+]
+
+[[package]]
 name = "dtoa"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -102,8 +110,7 @@ dependencies = [
 name = "runitsv"
 version = "0.1.0"
 dependencies = [
- "serde",
- "serde_yaml",
+ "config",
  "structopt",
  "sv",
 ]
@@ -169,6 +176,7 @@ name = "sv"
 version = "0.1.0"
 dependencies = [
  "byteorder",
+ "config",
  "sysinfo",
 ]
 
