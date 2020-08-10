@@ -5,10 +5,11 @@ use crate::status::{ServiceState, ServiceStatus};
 use std::env;
 use std::error;
 use std::ffi::OsString;
-use std::fs::OpenOptions;
+use std::fs;
 use std::io::BufReader;
 use std::io::{Read, Write};
 use std::ops::Add;
+use std::os::unix::fs as ufs;
 use std::path::Path;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
@@ -23,6 +24,7 @@ pub const SRC_DIR: &str = "/etc/runit/sv/";
 pub struct Service {
     pub uri: String,
     pub sv_dir: String,
+    config: Option<conf::Settings>,
 }
 
 pub enum ServiceFile {
@@ -69,7 +71,11 @@ impl Service {
             None => return Err(Error::DirNotFound(uri.clone())),
         };
 
-        let service = Service { uri, sv_dir };
+        let service = Service {
+            uri,
+            sv_dir,
+            config: settings.clone(),
+        };
         service.check()?;
 
         Ok(service)
@@ -114,7 +120,7 @@ impl Service {
     ) -> Result<String, Box<dyn error::Error>> {
         // Write control char into the
         // control file of the service
-        OpenOptions::new()
+        fs::OpenOptions::new()
             .write(true)
             .open(self.get_file_path(ServiceFile::Control))?
             .write_all(cmd.value().unwrap().as_bytes())?;
@@ -174,16 +180,67 @@ impl Service {
     }
 
     pub fn enable(&self) -> String {
-        "".to_string()
+        if !self.exists() {
+            return format!("Service '{}' not found", self.uri);
+        }
+        if self.is_enabled() {
+            return "Service is already enabled".to_string();
+        }
+
+        // create symlink
+        if let Some(settings) = &self.config {
+            if let Err(e) = ufs::symlink(
+                Path::new(&settings.service_path).join(&self.uri),
+                Path::new(&settings.runsv_dir).join(&self.uri),
+            ) {
+                format!("Error: {}", e);
+            }
+        } else {
+            return "Unexpected error".to_string();
+        }
+
+        format!("Service '{}' enabled successfully", self.uri)
     }
 
     pub fn disable(&self) -> String {
-        "".to_string()
+        if let Some(settings) = &self.config {
+            if !self.exists() {
+                return format!("Service '{}' not found", self.uri);
+            }
+
+            if !self.is_enabled() {
+                return "Service is already disabled".to_string();
+            }
+
+            let sv_path = Path::new(&settings.runsv_dir).join(&self.uri);
+            if let Err(e) = fs::remove_file(sv_path) {
+                return format!("Err: {}", e);
+            }
+        }
+
+        format!("Service '{}' disabled successfully", self.uri)
+    }
+
+    pub fn exists(&self) -> bool {
+        if let Some(settings) = &self.config {
+            return Path::new(&settings.service_path).join(&self.uri).exists();
+        }
+
+        false
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        let p = Path::new(&self.sv_dir).join(&self.uri);
+        p.exists()
+    }
+
+    pub fn is_disabled(&self) -> bool {
+        self.is_enabled()
     }
 
     fn read_status(&self) -> Result<ServiceStatus, Box<dyn error::Error>> {
         let status_path = self.get_file_path(ServiceFile::Status);
-        let f = OpenOptions::new().read(true).open(&status_path)?;
+        let f = fs::OpenOptions::new().read(true).open(&status_path)?;
 
         let mut f = BufReader::new(f);
         let mut buff = [0; 20];

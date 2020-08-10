@@ -9,7 +9,7 @@ use std::path;
 pub const DEFAULT_CONF_PATH: &str = "/etc/runitsv/";
 pub const DEFAULT_CONF_FILE: &str = "default.conf";
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     pub runsv_dir: String,
     pub service_path: String,
