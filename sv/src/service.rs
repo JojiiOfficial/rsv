@@ -26,6 +26,7 @@ pub enum ServiceFile {
     // servicedir
     // files
     Run,
+    Down,
     Finish,
 
     // supervise
@@ -42,6 +43,7 @@ impl ServiceFile {
     pub fn to_string(&self) -> &str {
         match self {
             ServiceFile::Run => "run",
+            ServiceFile::Down => "down",
             ServiceFile::Finish => "finish",
             ServiceFile::PID => "supervise/pid",
             ServiceFile::Control => "supervise/control",

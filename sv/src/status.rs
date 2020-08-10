@@ -1,6 +1,9 @@
-use crate::error::Error;
-use crate::service::Service;
+use std::fs;
+use std::io::ErrorKind;
 use std::time::{Duration, SystemTime};
+
+use crate::error::{Error, WARN};
+use crate::service::{Service, ServiceFile};
 
 pub const FINISH: &str = "finish";
 pub const RUN: &str = "run";
@@ -11,6 +14,7 @@ pub struct ServiceStatus {
     pub pid: i32,
     pub time: Duration,
     pub state: ServiceState,
+    pub normallyup: bool,
 }
 
 #[derive(PartialEq, Debug)]
@@ -44,7 +48,33 @@ impl ServiceStatus {
             _ => return Err(Error::ParsingStatus(service.uri.clone())),
         };
 
-        Ok(ServiceStatus { pid, time, state })
+        // Check http://smarden.org/runit/runsv.8.html
+        let normallyup = match fs::metadata(service.get_file_path(ServiceFile::Down)) {
+            Ok(_) => false,
+            Err(err) => match err.kind() {
+                // If simply not found, the service is normally up
+                ErrorKind::NotFound => true,
+
+                // On any other error print warning
+                // See sv.c:120 from the runit source
+                _ => {
+                    println!(
+                        "{}: unable to stat {}/down: {}",
+                        WARN,
+                        service.uri.clone(),
+                        err.raw_os_error().unwrap()
+                    );
+                    false
+                }
+            },
+        };
+
+        Ok(ServiceStatus {
+            pid,
+            time,
+            state,
+            normallyup,
+        })
     }
 
     pub fn is_running(&self) -> bool {
