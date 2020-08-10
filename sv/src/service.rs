@@ -93,32 +93,41 @@ impl Service {
     }
 
     /// Run a sv command
-    pub fn run(&self, cmd: SvCommandType) -> Result<String, Box<dyn error::Error>> {
+    pub fn run(
+        &self,
+        cmd: SvCommandType,
+        timeout: Duration,
+    ) -> Result<String, Box<dyn error::Error>> {
         Ok(match cmd {
             SvCommandType::Status => self.status()?,
             SvCommandType::Enable => self.enable(),
             SvCommandType::Disable => self.disable(),
 
-            _ => self.run_control_cmd(cmd)?,
+            _ => self.run_control_cmd(cmd, timeout)?,
         })
     }
 
-    pub fn run_control_cmd(&self, cmd: SvCommandType) -> Result<String, Box<dyn error::Error>> {
-        let control_path = self.get_file_path(ServiceFile::Control);
+    pub fn run_control_cmd(
+        &self,
+        cmd: SvCommandType,
+        timeout: Duration,
+    ) -> Result<String, Box<dyn error::Error>> {
+        // Write control char into the
+        // control file of the service
+        OpenOptions::new()
+            .write(true)
+            .open(self.get_file_path(ServiceFile::Control))?
+            .write_all(cmd.value().unwrap().as_bytes())?;
 
-        let mut f = OpenOptions::new().write(true).open(&control_path)?;
-        f.write_all(cmd.value().unwrap().as_bytes())?;
-
-        // TODO make this a parameter
-        let timeout = Duration::from_secs(7);
-        let mut hit_timeout = false;
+        let mut msg = String::from("ok: ");
         let end = SystemTime::now().add(timeout);
 
+        // Wait for the command to take effect
         loop {
-            sleep(Duration::from_millis(100));
+            sleep(Duration::from_millis(40));
 
             if end < SystemTime::now() {
-                hit_timeout = true;
+                msg = String::from("timeout: ");
                 break;
             }
 
@@ -141,9 +150,7 @@ impl Service {
             }
         }
 
-        if hit_timeout {
-            print!("timeout: ");
-        }
+        print!("{}", msg);
         Ok(self.status()?)
     }
 

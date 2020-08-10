@@ -6,6 +6,6 @@ fn main() {
 
     match run::run(opt) {
         Ok(s) => print!("{}", s),
-        Err(e) => eprint!("An error occured: {}", e),
+        Err(e) => eprintln!("An error occured: {}", e),
     }
 }

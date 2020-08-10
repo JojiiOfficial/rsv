@@ -5,6 +5,9 @@ pub struct AppArgs {
     #[structopt(short, long, parse(from_occurrences))]
     pub verbose: u32,
 
+    #[structopt(short, long, global = true)]
+    pub timeout: Option<u64>,
+
     #[structopt(subcommand)]
     pub cmd: Subcommands,
 }

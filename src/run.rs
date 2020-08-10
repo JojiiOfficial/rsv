@@ -1,5 +1,6 @@
 use std::error;
 use std::process;
+use std::time::Duration;
 
 use crate::args::{AppArgs, ServiceAction, Subcommands};
 
@@ -33,8 +34,16 @@ pub fn run(opts: AppArgs) -> Result<String, Box<dyn error::Error>> {
         return Err(err);
     }
 
+    let duration = {
+        if let Some(dur) = opts.timeout {
+            Duration::from_secs(dur)
+        } else {
+            Duration::from_secs(7)
+        }
+    };
+
     // Run the actual command
-    service.run(cmd_type)
+    service.run(cmd_type, duration)
 }
 
 // parse the subcommands
