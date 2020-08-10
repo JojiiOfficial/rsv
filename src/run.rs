@@ -8,20 +8,40 @@ use sv::cmdtype::SvCommandType;
 use sv::service::Service;
 
 // Run the app
-pub fn run(opts: AppArgs, mut settings: conf::Settings) -> Result<String, Box<dyn error::Error>> {
+pub fn run(opts: AppArgs) -> Result<String, Box<dyn error::Error>> {
+    // We need to check the error later since the config
+    // might not be required by the given command
+    let mut setting_error = None;
+    let settings = match conf::Settings::new() {
+        Ok(s) => Some(s),
+        Err(e) => {
+            setting_error = Some(e);
+            None
+        }
+    };
+
     let (service, cmd_type) = parse_subcommands(opts.cmd, &settings);
 
-    // Save different setting
-    if service.sv_dir != settings.runsv_dir && service.sv_dir.len() > 0 {
-        settings.runsv_dir = service.sv_dir.clone();
-        settings.save()?;
+    // Check for config errors here
+    if let Some(mut settings) = settings {
+        // On success save different setting if necessary
+        if service.sv_dir != settings.runsv_dir && service.sv_dir.len() > 0 {
+            settings.runsv_dir = service.sv_dir.clone();
+            settings.save()?;
+        }
+    } else if let Some(err) = setting_error {
+        return Err(err);
     }
 
+    // Run the actual command
     service.run(cmd_type)
 }
 
 // parse the subcommands
-fn parse_subcommands(cmds: Subcommands, settings: &conf::Settings) -> (Service, SvCommandType) {
+fn parse_subcommands(
+    cmds: Subcommands,
+    settings: &Option<conf::Settings>,
+) -> (Service, SvCommandType) {
     let (action, sv_type) = match cmds {
         Subcommands::Enable(action) => (action, SvCommandType::Enable),
         Subcommands::Disable(action) => (action, SvCommandType::Disable),
@@ -39,7 +59,7 @@ fn parse_subcommands(cmds: Subcommands, settings: &conf::Settings) -> (Service, 
 }
 
 // Get service by action
-fn action_to_service(action: ServiceAction, settings: &conf::Settings) -> Service {
+fn action_to_service(action: ServiceAction, settings: &Option<conf::Settings>) -> Service {
     match Service::new(action.service, settings) {
         Ok(service) => service,
         Err(err) => {

@@ -55,9 +55,9 @@ impl ServiceFile {
 
 impl Service {
     /// Create a new SvCommand object
-    pub fn new(uri: String, settings: &conf::Settings) -> Result<Service, Error> {
+    pub fn new(uri: String, settings: &Option<conf::Settings>) -> Result<Service, Error> {
         // Get service directory
-        let sv_dir = match get_svdir(&settings) {
+        let sv_dir = match get_svdir(settings) {
             Some(v) => v,
             None => return Err(Error::DirNotFound(uri.clone())),
         };
@@ -140,14 +140,17 @@ impl Service {
 }
 
 // Try to get service dir
-fn get_svdir(settings: &conf::Settings) -> Option<String> {
+fn get_svdir(settings: &Option<conf::Settings>) -> Option<String> {
     // Check environment variable first
     if let Ok(var) = env::var("SVDIR") {
         return Some(var);
     }
 
-    if settings.runsv_dir.len() > 0 && is_path(&settings.runsv_dir.as_str()) {
-        return Some(settings.runsv_dir.clone());
+    // Only use config if usable
+    if let Some(settings) = settings {
+        if settings.runsv_dir.len() > 0 && is_path(&settings.runsv_dir.as_str()) {
+            return Some(settings.runsv_dir.clone());
+        }
     }
 
     let sys = sysinfo::System::new();
