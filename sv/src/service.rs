@@ -115,9 +115,21 @@ impl Service {
 
     pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
         let status = self.read_status()?;
-        println!("{:#?}", status);
+        let mut fmt: String = format!(
+            "{}: {}: (pid {}) {}s",
+            status.state.value(),
+            self.uri,
+            status.pid,
+            status.time.as_secs()
+        );
 
-        Ok("".to_string())
+        let desired_state = status.get_desired_state();
+        if desired_state.len() > 0 {
+            fmt.push_str(&desired_state);
+        }
+
+        fmt.push('\n');
+        Ok(fmt)
     }
 
     pub fn enable(&self) -> String {

@@ -108,34 +108,42 @@ impl ServiceStatus {
         false
     }
 
-    pub fn get_desired_state(&self) -> &str {
+    pub fn get_desired_state(&self) -> String {
+        let mut s: String = String::new();
+
         if self.pid > 0 {
             if !self.normallyup {
-                return NORMALLY_DOWN;
+                s.push_str(", ");
+                s.push_str(NORMALLY_DOWN);
             }
 
             if self.paused {
-                return PAUSED;
+                s.push_str(", ");
+                s.push_str(PAUSED);
             }
 
             if self.want == Wants::Down {
-                return WANT_DOWN;
+                s.push_str(", ");
+                s.push_str(WANT_DOWN);
             }
 
             if self.term {
-                return GOT_TERM;
+                s.push_str(", ");
+                s.push_str(GOT_TERM);
             }
         } else {
             if self.normallyup {
-                return NORMALLY_UP;
+                s.push_str(", ");
+                s.push_str(NORMALLY_UP);
             }
 
             if self.want == Wants::Up {
-                return WANT_UP;
+                s.push_str(", ");
+                s.push_str(WANT_UP);
             }
         }
 
-        ""
+        s
     }
 
     pub fn is_running(&self) -> bool {
