@@ -5,6 +5,7 @@ use std::error;
 use std::fs::{self, create_dir_all, File};
 use std::io::Write;
 use std::path::{self, Path};
+use std::process;
 
 use sysinfo::SystemExt;
 
@@ -21,7 +22,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             runsv_dir: "".into(),
-            service_path: "/etc/runit/sv".to_string(),
+            service_path: "/etc/runit/sv".into(),
         }
     }
 }
@@ -80,24 +81,35 @@ fn init_svdir(config: &mut Config) -> bool {
         return false;
     }
 
+    let sys = sysinfo::System::new();
+    let a = sys
+        .get_process_list()
+        .iter()
+        .filter(|(_, v)| v.name.contains("runsvdir"))
+        .nth(0);
+
+    let not_found_err = || {
+        println!("Can't find runsvdir! make sure you have a running 'runsvdir' process!");
+        process::exit(1);
+    };
+
+    if let None = a {
+        not_found_err();
+    }
+
     let mut was_p = false;
-    for (_, v) in sysinfo::System::new().get_process_list().iter() {
-        if !v.name.contains("runsvdir") {
+    for arg in a.unwrap().1.cmd.iter() {
+        if arg == "-P" {
+            was_p = true;
             continue;
         }
 
-        for arg in v.cmd.iter() {
-            if arg == "-P" {
-                was_p = true;
-                continue;
-            }
-
-            if was_p && arg.len() > 0 && arg.starts_with("/") {
-                config.runsv_dir = arg.clone();
-                return true;
-            }
+        if was_p && arg.len() > 0 && arg.starts_with("/") {
+            config.runsv_dir = arg.clone();
+            return true;
         }
     }
 
+    not_found_err();
     false
 }
