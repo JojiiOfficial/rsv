@@ -160,10 +160,15 @@ fn parse_time(buff: &[u8; 20]) -> Duration {
     time <<= 8;
     time += buff[7] as u32;
 
-    SystemTime::now()
+    let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        - Duration::from_secs((time - 10) as u64)
+        .unwrap();
+    let sub_sec = Duration::from_secs((time) as u64);
+
+    if sub_sec > now {
+        return Duration::from_secs(0);
+    }
+    return now - sub_sec;
 }
 
 fn parse_pid(buff: &[u8; 20]) -> i32 {
