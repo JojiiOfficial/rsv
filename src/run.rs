@@ -1,4 +1,6 @@
+use std::env;
 use std::error;
+use std::path::Path;
 use std::process;
 use std::time::Duration;
 
@@ -7,32 +9,13 @@ use crate::args::{AppArgs, ServiceAction, Subcommands};
 use config::conf;
 use sv::cmdtype::SvCommandType;
 use sv::service::Service;
+use sysinfo::SystemExt;
 
 // Run the app
 pub fn run(opts: AppArgs) -> Result<String, Box<dyn error::Error>> {
-    // We need to check the error later since the config
-    // might not be required by the given command
-    let mut setting_error = None;
-    let settings = match conf::Settings::new() {
-        Ok(s) => Some(s),
-        Err(e) => {
-            setting_error = Some(e);
-            None
-        }
-    };
-
-    let (service, cmd_type) = parse_subcommands(opts.cmd, &settings);
-
-    // Check for config errors here
-    if let Some(mut settings) = settings {
-        // On success save different setting if necessary
-        if service.sv_dir != settings.runsv_dir && service.sv_dir.len() > 0 {
-            settings.runsv_dir = service.sv_dir.clone();
-            settings.save()?;
-        }
-    } else if let Some(err) = setting_error {
-        return Err(err);
-    }
+    let mut settings = conf::Settings::new()?;
+    init_svdir(&mut settings)?;
+    let (service, cmd_type) = parse_subcommands(opts.cmd, settings);
 
     let duration = {
         if let Some(dur) = opts.timeout {
@@ -47,10 +30,7 @@ pub fn run(opts: AppArgs) -> Result<String, Box<dyn error::Error>> {
 }
 
 // parse the subcommands
-fn parse_subcommands(
-    cmds: Subcommands,
-    settings: &Option<conf::Settings>,
-) -> (Service, SvCommandType) {
+fn parse_subcommands(cmds: Subcommands, settings: conf::Settings) -> (Service, SvCommandType) {
     let (action, sv_type) = match cmds {
         Subcommands::Enable(action) => (action, SvCommandType::Enable),
         Subcommands::Disable(action) => (action, SvCommandType::Disable),
@@ -68,7 +48,7 @@ fn parse_subcommands(
 }
 
 // Get service by action
-fn action_to_service(action: ServiceAction, settings: &Option<conf::Settings>) -> Service {
+fn action_to_service(action: ServiceAction, settings: conf::Settings) -> Service {
     match Service::new(action.service, settings) {
         Ok(service) => service,
         Err(err) => {
@@ -76,4 +56,42 @@ fn action_to_service(action: ServiceAction, settings: &Option<conf::Settings>) -
             process::exit(1);
         }
     }
+}
+
+fn init_svdir(settings: &mut conf::Settings) -> Result<(), Box<dyn error::Error>> {
+    // Check environment variable first
+    if let Ok(var) = env::var("SVDIR") {
+        if var.len() > 0 {
+            settings.runsv_dir = var;
+            return Ok(());
+        }
+    }
+
+    // Only use config if usable
+    if settings.runsv_dir.len() > 1 && Path::new(&settings.runsv_dir.as_str()).exists() {
+        return Ok(());
+    }
+
+    let sys = sysinfo::System::new();
+    let mut was_p = false;
+
+    for (_, v) in sys.get_process_list().iter() {
+        if !v.name.contains("runsvdir") {
+            continue;
+        }
+
+        for arg in v.cmd.iter() {
+            if arg == "-P" {
+                was_p = true;
+                continue;
+            }
+
+            if was_p && arg.len() > 0 && arg.starts_with("/") {
+                settings.runsv_dir = arg.clone();
+                return settings.save();
+            }
+        }
+    }
+
+    Ok(())
 }

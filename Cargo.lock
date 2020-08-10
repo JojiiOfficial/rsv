@@ -113,6 +113,7 @@ dependencies = [
  "config",
  "structopt",
  "sv",
+ "sysinfo",
 ]
 
 [[package]]
@@ -177,7 +178,6 @@ version = "0.1.0"
 dependencies = [
  "byteorder",
  "config",
- "sysinfo",
 ]
 
 [[package]]

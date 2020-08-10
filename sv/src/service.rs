@@ -2,7 +2,6 @@ use crate::cmdtype::SvCommandType;
 use crate::error::Error;
 use crate::status::{ServiceState, ServiceStatus};
 
-use std::env;
 use std::error;
 use std::ffi::OsString;
 use std::fs;
@@ -15,7 +14,6 @@ use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
 use config::conf;
-use sysinfo::SystemExt;
 
 pub const SRC_DIR: &str = "/etc/runit/sv/";
 
@@ -23,8 +21,7 @@ pub const SRC_DIR: &str = "/etc/runit/sv/";
 #[derive(Debug)]
 pub struct Service {
     pub uri: String,
-    pub sv_dir: String,
-    config: Option<conf::Settings>,
+    config: conf::Settings,
 }
 
 pub enum ServiceFile {
@@ -64,34 +61,17 @@ impl ServiceFile {
 
 impl Service {
     /// Create a new SvCommand object
-    pub fn new(uri: String, settings: &Option<conf::Settings>) -> Result<Service, Error> {
-        // Get service directory
-        let sv_dir = match get_svdir(settings) {
-            Some(v) => v,
-            None => return Err(Error::DirNotFound(uri.clone())),
-        };
-
+    pub fn new(uri: String, settings: conf::Settings) -> Result<Service, Error> {
         let service = Service {
             uri,
-            sv_dir,
             config: settings.clone(),
         };
-        service.check()?;
 
         Ok(service)
     }
 
-    // Check given service
-    fn check(&self) -> Result<(), Error> {
-        if !is_path(&self.sv_dir) {
-            return Err(Error::DirNotFound(self.uri.clone()));
-        }
-
-        Ok(())
-    }
-
     pub fn get_file_path(&self, kfile: ServiceFile) -> OsString {
-        let a = Path::new(&self.sv_dir)
+        let a = Path::new(&self.config.runsv_dir)
             .join(&self.uri)
             .join(kfile.to_string());
 
@@ -125,7 +105,16 @@ impl Service {
             .open(self.get_file_path(ServiceFile::Control))?
             .write_all(cmd.value().unwrap().as_bytes())?;
 
-        let mut msg = String::from("ok: ");
+        let msg = self.await_command(cmd, timeout)?;
+        print!("{}", msg);
+        Ok(self.status()?)
+    }
+
+    fn await_command(
+        &self,
+        cmd: SvCommandType,
+        timeout: Duration,
+    ) -> Result<String, Box<dyn error::Error>> {
         let end = SystemTime::now().add(timeout);
 
         // Wait for the command to take effect
@@ -133,8 +122,7 @@ impl Service {
             sleep(Duration::from_millis(40));
 
             if end < SystemTime::now() {
-                msg = String::from("timeout: ");
-                break;
+                return Ok("timeout".to_string());
             }
 
             let status = self.read_status()?;
@@ -156,8 +144,7 @@ impl Service {
             }
         }
 
-        print!("{}", msg);
-        Ok(self.status()?)
+        Ok("ok".to_string())
     }
 
     pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
@@ -188,54 +175,41 @@ impl Service {
         }
 
         // create symlink
-        if let Some(settings) = &self.config {
-            if let Err(e) = ufs::symlink(
-                Path::new(&settings.service_path).join(&self.uri),
-                Path::new(&settings.runsv_dir).join(&self.uri),
-            ) {
-                format!("Error: {}", e);
-            }
-        } else {
-            return "Unexpected error".to_string();
+        if let Err(e) = ufs::symlink(
+            Path::new(&self.config.service_path).join(&self.uri),
+            Path::new(&self.config.runsv_dir).join(&self.uri),
+        ) {
+            format!("Error: {}", e);
         }
 
         format!("Service '{}' enabled successfully", self.uri)
     }
 
     pub fn disable(&self) -> String {
-        if let Some(settings) = &self.config {
-            if !self.exists() {
-                return format!("Service '{}' not found", self.uri);
-            }
+        if !self.exists() {
+            return format!("Service '{}' not found", self.uri);
+        }
 
-            if !self.is_enabled() {
-                return "Service is already disabled".to_string();
-            }
+        if !self.is_enabled() {
+            return "Service is already disabled".to_string();
+        }
 
-            let sv_path = Path::new(&settings.runsv_dir).join(&self.uri);
-            if let Err(e) = fs::remove_file(sv_path) {
-                return format!("Err: {}", e);
-            }
+        let sv_path = Path::new(&self.config.runsv_dir).join(&self.uri);
+        if let Err(e) = fs::remove_file(sv_path) {
+            return format!("Err: {}", e);
         }
 
         format!("Service '{}' disabled successfully", self.uri)
     }
 
     pub fn exists(&self) -> bool {
-        if let Some(settings) = &self.config {
-            return Path::new(&settings.service_path).join(&self.uri).exists();
-        }
-
-        false
+        return Path::new(&self.config.service_path)
+            .join(&self.uri)
+            .exists();
     }
 
     pub fn is_enabled(&self) -> bool {
-        let p = Path::new(&self.sv_dir).join(&self.uri);
-        p.exists()
-    }
-
-    pub fn is_disabled(&self) -> bool {
-        self.is_enabled()
+        Path::new(&self.config.runsv_dir).join(&self.uri).exists()
     }
 
     fn read_status(&self) -> Result<ServiceStatus, Box<dyn error::Error>> {
@@ -249,46 +223,4 @@ impl Service {
         let service = ServiceStatus::new_by_buff(self, buff)?;
         return Ok(service);
     }
-}
-
-// Try to get service dir
-fn get_svdir(settings: &Option<conf::Settings>) -> Option<String> {
-    // Check environment variable first
-    if let Ok(var) = env::var("SVDIR") {
-        return Some(var);
-    }
-
-    // Only use config if usable
-    if let Some(settings) = settings {
-        if settings.runsv_dir.len() > 0 && is_path(&settings.runsv_dir.as_str()) {
-            return Some(settings.runsv_dir.clone());
-        }
-    }
-
-    let sys = sysinfo::System::new();
-    let mut was_p = false;
-
-    for (_, v) in sys.get_process_list().iter() {
-        if !v.name.contains("runsvdir") {
-            continue;
-        }
-
-        for arg in v.cmd.iter() {
-            if arg == "-P" {
-                was_p = true;
-                continue;
-            }
-
-            if was_p && arg.len() > 0 && arg.starts_with("/") {
-                return Some(arg.clone());
-            }
-        }
-    }
-
-    None
-}
-
-// return true if given path exists
-fn is_path(s: &str) -> bool {
-    Path::new(s).exists()
 }
