@@ -29,6 +29,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_yaml",
+ "sysinfo",
 ]
 
 [[package]]
@@ -113,7 +114,6 @@ dependencies = [
  "config",
  "structopt",
  "sv",
- "sysinfo",
 ]
 
 [[package]]

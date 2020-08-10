@@ -10,4 +10,3 @@ edition = "2018"
 sv = {path="sv"}
 config = {path="config"}
 structopt = { version = "0.3", default-features = false }
-sysinfo = "0.3.19"

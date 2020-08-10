@@ -12,13 +12,13 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
-use config::conf;
+use config::Config;
 
 // A sv command
 #[derive(Debug)]
 pub struct Service {
     pub uri: String,
-    config: conf::Settings,
+    config: Config,
 }
 
 pub enum ServiceFile {
@@ -58,7 +58,7 @@ impl ServiceFile {
 
 impl Service {
     /// Create a new SvCommand object
-    pub fn new(uri: String, settings: conf::Settings) -> Service {
+    pub fn new(uri: String, settings: Config) -> Service {
         Service {
             uri,
             config: settings.clone(),
