@@ -13,6 +13,7 @@ pub enum Error {
     DirNotFound(String),
     ParsingStatus(String),
     SuperviseAccessDenied(String),
+    Timeout(String),
 }
 
 impl fmt::Display for Error {
@@ -35,6 +36,7 @@ impl Error {
                 FAIL, s
             ),
             Error::ParsingStatus(s) => format!("{}: {}: unable to parse Status", FAIL, s),
+            Error::Timeout(_) => format!("{}:", TIMEOUT),
         }
     }
 }

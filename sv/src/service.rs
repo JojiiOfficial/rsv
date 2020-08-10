@@ -1,6 +1,6 @@
 use crate::cmdtype::SvCommandType;
-use crate::error::{Error, OK};
-use crate::status::ServiceStatus;
+use crate::error::Error;
+use crate::status::{ServiceState, ServiceStatus};
 
 use std::env;
 use std::error;
@@ -8,7 +8,9 @@ use std::ffi::OsString;
 use std::fs::OpenOptions;
 use std::io::BufReader;
 use std::io::{Read, Write};
+use std::ops::Add;
 use std::path::Path;
+use std::time::{Duration, SystemTime};
 
 use config::conf;
 use sysinfo::SystemExt;
@@ -94,23 +96,43 @@ impl Service {
             SvCommandType::Enable => self.enable(),
             SvCommandType::Disable => self.disable(),
 
-            _ => self.run_control_cmd(cmd),
+            _ => self.run_control_cmd(cmd)?,
         })
     }
 
-    pub fn run_control_cmd(&self, cmd: SvCommandType) -> String {
+    pub fn run_control_cmd(&self, cmd: SvCommandType) -> Result<String, Box<dyn error::Error>> {
         let control_path = self.get_file_path(ServiceFile::Control);
 
-        let mut f = match OpenOptions::new().write(true).open(&control_path) {
-            Ok(file) => file,
-            Err(_) => return Error::DirNotFound(self.uri.clone()).string(),
-        };
+        let mut f = OpenOptions::new().write(true).open(&control_path)?;
+        f.write_all(cmd.value().unwrap().as_bytes())?;
 
-        if let Err(_) = f.write_all(cmd.value().unwrap().as_bytes()) {
-            return Error::DirNotFound(self.uri.clone()).string();
-        };
+        // TODO make this a parameter
+        let timeout = Duration::from_secs(7);
+        let end = SystemTime::now().add(timeout);
 
-        format!("{}: {}:", OK, self.uri)
+        loop {
+            if end < SystemTime::now() {
+                return Ok("timeout".to_string());
+            }
+
+            let status = self.read_status()?;
+            match cmd {
+                SvCommandType::Up => {
+                    if status.pid > 0 && status.state == ServiceState::Run {
+                        break;
+                    }
+                }
+                SvCommandType::Down | SvCommandType::Kill | SvCommandType::Exit => {
+                    if status.pid == 0 {
+                        break;
+                    }
+                }
+
+                _ => break,
+            }
+        }
+
+        Ok(self.status()?)
     }
 
     pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
