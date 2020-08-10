@@ -1,5 +1,4 @@
 use crate::cmdtype::SvCommandType;
-use crate::error::Error;
 use crate::status::{ServiceState, ServiceStatus};
 
 use std::error;
@@ -14,8 +13,6 @@ use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
 use config::conf;
-
-pub const SRC_DIR: &str = "/etc/runit/sv/";
 
 // A sv command
 #[derive(Debug)]
@@ -61,13 +58,11 @@ impl ServiceFile {
 
 impl Service {
     /// Create a new SvCommand object
-    pub fn new(uri: String, settings: conf::Settings) -> Result<Service, Error> {
-        let service = Service {
+    pub fn new(uri: String, settings: conf::Settings) -> Service {
+        Service {
             uri,
             config: settings.clone(),
-        };
-
-        Ok(service)
+        }
     }
 
     pub fn get_file_path(&self, kfile: ServiceFile) -> OsString {

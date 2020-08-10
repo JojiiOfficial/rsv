@@ -4,7 +4,7 @@ use std::path::Path;
 use std::process;
 use std::time::Duration;
 
-use crate::args::{AppArgs, ServiceAction, Subcommands};
+use crate::args::{AppArgs, Subcommands};
 
 use config::conf;
 use sv::cmdtype::SvCommandType;
@@ -17,16 +17,8 @@ pub fn run(opts: AppArgs) -> Result<String, Box<dyn error::Error>> {
     init_svdir(&mut settings)?;
     let (service, cmd_type) = parse_subcommands(opts.cmd, settings);
 
-    let duration = {
-        if let Some(dur) = opts.timeout {
-            Duration::from_secs(dur)
-        } else {
-            Duration::from_secs(7)
-        }
-    };
-
     // Run the actual command
-    service.run(cmd_type, duration)
+    service.run(cmd_type, Duration::from_secs(opts.timeout.unwrap_or(7)))
 }
 
 // parse the subcommands
@@ -44,18 +36,7 @@ fn parse_subcommands(cmds: Subcommands, settings: conf::Settings) -> (Service, S
         }
     };
 
-    return (action_to_service(action, settings), sv_type);
-}
-
-// Get service by action
-fn action_to_service(action: ServiceAction, settings: conf::Settings) -> Service {
-    match Service::new(action.service, settings) {
-        Ok(service) => service,
-        Err(err) => {
-            eprint!("{}", err.string());
-            process::exit(1);
-        }
-    }
+    return (Service::new(action.service, settings), sv_type);
 }
 
 fn init_svdir(settings: &mut conf::Settings) -> Result<(), Box<dyn error::Error>> {
