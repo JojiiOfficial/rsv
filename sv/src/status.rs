@@ -146,6 +146,18 @@ impl ServiceStatus {
         s
     }
 
+    pub fn check_script(service: &Service) -> bool {
+        // TODO implement other checks from sv.c:178
+        let md = fs::metadata(service.get_file_path(ServiceFile::Check));
+        if let Err(err) = md {
+            if err.kind() == ErrorKind::NotFound {
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub fn is_running(&self) -> bool {
         return self.state == ServiceState::Run;
     }

@@ -10,6 +10,7 @@ use std::io::BufReader;
 use std::io::{Read, Write};
 use std::ops::Add;
 use std::path::Path;
+use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
 use config::conf;
@@ -39,6 +40,7 @@ pub enum ServiceFile {
     OK,
     Stat,
     Status,
+    Check,
 }
 
 impl ServiceFile {
@@ -47,6 +49,7 @@ impl ServiceFile {
             ServiceFile::Run => "run",
             ServiceFile::Down => "down",
             ServiceFile::Finish => "finish",
+            ServiceFile::Check => "supervise/check",
             ServiceFile::PID => "supervise/pid",
             ServiceFile::Control => "supervise/control",
             ServiceFile::Lock => "supervise/lock",
@@ -108,22 +111,28 @@ impl Service {
 
         // TODO make this a parameter
         let timeout = Duration::from_secs(7);
+        let mut hit_timeout = false;
         let end = SystemTime::now().add(timeout);
 
         loop {
+            sleep(Duration::from_millis(100));
+
             if end < SystemTime::now() {
-                return Ok("timeout".to_string());
+                hit_timeout = true;
+                break;
             }
 
             let status = self.read_status()?;
             match cmd {
                 SvCommandType::Up => {
-                    if status.pid > 0 && status.state == ServiceState::Run {
+                    if (status.pid > 0 && status.state == ServiceState::Run)
+                        && ServiceStatus::check_script(self)
+                    {
                         break;
                     }
                 }
                 SvCommandType::Down | SvCommandType::Kill | SvCommandType::Exit => {
-                    if status.pid == 0 {
+                    if status.pid == 0 && status.state == ServiceState::Down {
                         break;
                     }
                 }
@@ -132,6 +141,9 @@ impl Service {
             }
         }
 
+        if hit_timeout {
+            print!("timeout: ");
+        }
         Ok(self.status()?)
     }
 
