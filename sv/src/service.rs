@@ -105,8 +105,9 @@ impl Service {
             .open(self.get_file_path(ServiceFile::Control))?
             .write_all(cmd.value().unwrap().as_bytes())?;
 
-        let msg = self.await_command(cmd, timeout)?;
-        print!("{}", msg);
+        // Wait for the command to take effect
+        // print the result
+        print!("{}", self.await_command(cmd, timeout)?);
         Ok(self.status()?)
     }
 
@@ -116,8 +117,6 @@ impl Service {
         timeout: Duration,
     ) -> Result<String, Box<dyn error::Error>> {
         let end = SystemTime::now().add(timeout);
-
-        // Wait for the command to take effect
         loop {
             sleep(Duration::from_millis(40));
 
@@ -149,6 +148,7 @@ impl Service {
 
     pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
         let status = self.read_status()?;
+
         let mut fmt: String = format!(
             "{}: {}: (pid {}) {}s",
             status.state.value(),
@@ -170,15 +170,17 @@ impl Service {
         if !self.exists() {
             return format!("Service '{}' not found", self.uri);
         }
+
         if self.is_enabled() {
             return "Service is already enabled".to_string();
         }
 
         // create symlink
-        if let Err(e) = ufs::symlink(
+        let symlink = ufs::symlink(
             Path::new(&self.config.service_path).join(&self.uri),
             Path::new(&self.config.runsv_dir).join(&self.uri),
-        ) {
+        );
+        if let Err(e) = symlink {
             format!("Error: {}", e);
         }
 
@@ -220,7 +222,7 @@ impl Service {
         let mut buff = [0; 20];
         f.read_exact(&mut buff).expect("read error");
 
-        let service = ServiceStatus::new_by_buff(self, buff)?;
+        let service = ServiceStatus::new(self, buff)?;
         return Ok(service);
     }
 }

@@ -9,12 +9,12 @@ pub const FINISH: &str = "finish";
 pub const RUN: &str = "run";
 pub const DOWN: &str = "down";
 
-pub const NORMALLY_UP: &str = "normally up";
-pub const NORMALLY_DOWN: &str = "normally down";
-pub const PAUSED: &str = "paused";
-pub const WANT_UP: &str = "want up";
-pub const WANT_DOWN: &str = "want down";
-pub const GOT_TERM: &str = "got TERM";
+pub const NORMALLY_UP: &str = ", normally up";
+pub const NORMALLY_DOWN: &str = ", normally down";
+pub const PAUSED: &str = ", paused";
+pub const WANT_UP: &str = ", want up";
+pub const WANT_DOWN: &str = ", want down";
+pub const GOT_TERM: &str = ", got TERM";
 
 #[derive(Debug)]
 pub struct ServiceStatus {
@@ -52,7 +52,7 @@ impl ServiceState {
 }
 
 impl ServiceStatus {
-    pub fn new_by_buff(service: &Service, buff: [u8; 20]) -> Result<ServiceStatus, Error> {
+    pub fn new(service: &Service, buff: [u8; 20]) -> Result<ServiceStatus, Error> {
         let time = parse_time(&buff);
         let pid = parse_pid(&buff);
 
@@ -113,32 +113,26 @@ impl ServiceStatus {
 
         if self.pid > 0 {
             if !self.normallyup {
-                s.push_str(", ");
                 s.push_str(NORMALLY_DOWN);
             }
 
             if self.paused {
-                s.push_str(", ");
                 s.push_str(PAUSED);
             }
 
             if self.want == Wants::Down {
-                s.push_str(", ");
                 s.push_str(WANT_DOWN);
             }
 
             if self.term {
-                s.push_str(", ");
                 s.push_str(GOT_TERM);
             }
         } else {
             if self.normallyup {
-                s.push_str(", ");
                 s.push_str(NORMALLY_UP);
             }
 
             if self.want == Wants::Up {
-                s.push_str(", ");
                 s.push_str(WANT_UP);
             }
         }
