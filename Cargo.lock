@@ -107,7 +107,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "runitsv"
+name = "rsv"
 version = "0.1.0"
 dependencies = [
  "config",
