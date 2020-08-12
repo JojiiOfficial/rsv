@@ -30,11 +30,17 @@ pub enum Subcommands {
     #[structopt(about = "Status a service")]
     Status(ServiceAction),
 
-    #[structopt(about = "Reload a service")]
-    Reload(ServiceAction),
-
     #[structopt(about = "Restart a service")]
     Restart(ServiceAction),
+
+    #[structopt(about = "Start if service is not running. Do not restart if it stops")]
+    Once(ServiceAction),
+
+    #[structopt(about = "Send SIGSTOP if service is running")]
+    Pause(ServiceAction),
+
+    #[structopt(about = "Send SIGCONT if service is running")]
+    Continue(ServiceAction),
 }
 
 #[derive(StructOpt, Debug)]

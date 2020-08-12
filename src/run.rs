@@ -1,5 +1,4 @@
 use std::error;
-use std::process;
 use std::time::Duration;
 
 use crate::args::{AppArgs, Subcommands};
@@ -27,11 +26,9 @@ fn parse_subcommands(cmds: Subcommands, config: Config) -> (Service, SvCommandTy
         Subcommands::Stop(action) => (action, SvCommandType::Down),
         Subcommands::Status(action) => (action, SvCommandType::Status),
         Subcommands::Restart(action) => (action, SvCommandType::Restart),
-
-        _ => {
-            println!("not yet implemented");
-            process::exit(1);
-        }
+        Subcommands::Once(action) => (action, SvCommandType::Once),
+        Subcommands::Pause(action) => (action, SvCommandType::Pause),
+        Subcommands::Continue(action) => (action, SvCommandType::Continue),
     };
 
     return (Service::new(action.service, config), sv_type);
