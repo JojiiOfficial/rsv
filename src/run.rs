@@ -30,6 +30,10 @@ fn parse_subcommands(cmds: Subcommands, config: Config) -> (Service, SvCommandTy
         Subcommands::Pause(action) => (action, SvCommandType::Pause),
         Subcommands::Continue(action) => (action, SvCommandType::Continue),
         Subcommands::Term(action) => (action, SvCommandType::Terminate),
+        Subcommands::Hup(action) => (action, SvCommandType::Hangup),
+        Subcommands::Alarm(action) => (action, SvCommandType::Alarm),
+        Subcommands::Interrupt(action) => (action, SvCommandType::Interrupt),
+        Subcommands::Kill(action) => (action, SvCommandType::Kill),
     };
 
     return (Service::new(action.service, config), sv_type);

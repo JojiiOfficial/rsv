@@ -44,6 +44,18 @@ pub enum Subcommands {
 
     #[structopt(about = "Send SIGTERM if service is running")]
     Term(ServiceAction),
+
+    #[structopt(about = "Send SIGHUP if service is running")]
+    Hup(ServiceAction),
+
+    #[structopt(about = "Send SIGALARM if service is running")]
+    Alarm(ServiceAction),
+
+    #[structopt(about = "Send SIGINT if service is running")]
+    Interrupt(ServiceAction),
+
+    #[structopt(about = "Send SIGKILL if service is running")]
+    Kill(ServiceAction),
 }
 
 #[derive(StructOpt, Debug)]
