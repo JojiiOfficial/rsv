@@ -17,18 +17,20 @@ USAGE:
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
-    -v, --verbose    
+    -v, --verbose
 
 OPTIONS:
-    -t, --timeout <timeout>    
+    -t, --timeout <timeout>
 
 SUBCOMMANDS:
-    disable    Disable a service
-    enable     Enable a service
-    help       Prints this message or the help of the given subcommand(s)
-    reload     Reload a service
-    restart    Restart a service
-    start      Start a service
-    status     Status a service
-    stop       Stop a service
+    continue    Send SIGCONT if service is running
+    disable     Disable a service
+    enable      Enable a service
+    help        Prints this message or the help of the given subcommand(s)
+    once        Start if service is not running. Do not restart if it stops
+    pause       Send SIGSTOP if service is running
+    restart     Restart a service
+    start       Start a service
+    status      Status a service
+    stop        Stop a service
 ```
