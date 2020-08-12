@@ -70,7 +70,7 @@ impl Config {
 fn init_svdir(config: &mut Config) -> bool {
     // Check environment variable first
     if let Ok(var) = env::var("SVDIR") {
-        if var.len() > 0 {
+        if var.is_empty() {
             config.runsv_dir = var;
             return false;
         }

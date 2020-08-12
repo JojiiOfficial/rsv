@@ -66,6 +66,6 @@ pub struct ServiceAction {
 impl AppArgs {
     pub fn parse() -> AppArgs {
         let args = AppArgs::from_args();
-        return args;
+        args
     }
 }

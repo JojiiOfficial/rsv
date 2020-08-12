@@ -175,7 +175,7 @@ impl Service {
         );
 
         let desired_state = status.get_desired_state();
-        if desired_state.len() > 0 {
+        if desired_state.is_empty() {
             fmt.push_str(&desired_state);
         }
 
