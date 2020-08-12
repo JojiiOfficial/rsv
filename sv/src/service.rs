@@ -102,7 +102,7 @@ impl Service {
 
         // Wait for the command to take effect
         // print the result
-        print!("{}", self.await_command(cmd, timeout)?);
+        print!("{}: ", self.await_command(cmd, timeout)?);
         Ok(self.status()?)
     }
 
