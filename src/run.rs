@@ -26,6 +26,7 @@ fn parse_subcommands(cmds: Subcommands, config: Config) -> (Service, SvCommandTy
         Subcommands::Start(action) => (action, SvCommandType::Up),
         Subcommands::Stop(action) => (action, SvCommandType::Down),
         Subcommands::Status(action) => (action, SvCommandType::Status),
+        Subcommands::Restart(action) => (action, SvCommandType::Restart),
 
         _ => {
             println!("not yet implemented");

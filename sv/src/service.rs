@@ -83,15 +83,27 @@ impl Service {
             SvCommandType::Status => self.status()?,
             SvCommandType::Enable => self.enable(),
             SvCommandType::Disable => self.disable(),
+            SvCommandType::Restart => self.restart(timeout)?,
 
-            _ => self.run_control_cmd(cmd, timeout)?,
+            _ => self.control(cmd, timeout, true)?,
         })
+    }
+
+    pub fn control(
+        &self,
+        cmd: SvCommandType,
+        timeout: Duration,
+        kill_on_timeout: bool,
+    ) -> Result<String, Box<dyn error::Error>> {
+        let pre = self.run_control_cmd(cmd, timeout, kill_on_timeout)?;
+        Ok(format!("{}: {}", pre, self.status()?))
     }
 
     pub fn run_control_cmd(
         &self,
         cmd: SvCommandType,
         timeout: Duration,
+        kill_on_timeout: bool,
     ) -> Result<String, Box<dyn error::Error>> {
         // Write control char into the
         // control file of the service
@@ -102,20 +114,23 @@ impl Service {
 
         // Wait for the command to take effect
         // print the result
-        print!("{}: ", self.await_command(cmd, timeout)?);
-        Ok(self.status()?)
+        Ok(self.await_command(cmd, timeout, kill_on_timeout)?)
     }
 
     fn await_command(
         &self,
         cmd: SvCommandType,
         timeout: Duration,
+        kill_on_timeout: bool,
     ) -> Result<String, Box<dyn error::Error>> {
         let end = SystemTime::now().add(timeout);
         loop {
             sleep(Duration::from_millis(40));
 
             if end < SystemTime::now() {
+                if kill_on_timeout {
+                    return self.control(SvCommandType::Kill, timeout, false);
+                }
                 return Ok("timeout".to_string());
             }
 
@@ -139,6 +154,13 @@ impl Service {
         }
 
         Ok("ok".to_string())
+    }
+
+    pub fn restart(&self, timeout: Duration) -> Result<String, Box<dyn error::Error>> {
+        self.run_control_cmd(SvCommandType::Down, timeout, true)?;
+        self.run_control_cmd(SvCommandType::Up, timeout, true)?;
+        sleep(Duration::from_millis(500));
+        Ok(format!("ok: {}", self.status()?))
     }
 
     pub fn status(&self) -> Result<String, Box<dyn error::Error>> {

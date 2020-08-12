@@ -22,6 +22,7 @@ pub enum SvCommandType {
     Disable,
     Enable,
     Status,
+    Restart,
 }
 
 impl SvCommandType {
