@@ -41,6 +41,9 @@ pub enum Subcommands {
 
     #[structopt(about = "Send SIGCONT if service is running")]
     Continue(ServiceAction),
+
+    #[structopt(about = "Send SIGTERM if service is running")]
+    Term(ServiceAction),
 }
 
 #[derive(StructOpt, Debug)]

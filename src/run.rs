@@ -29,6 +29,7 @@ fn parse_subcommands(cmds: Subcommands, config: Config) -> (Service, SvCommandTy
         Subcommands::Once(action) => (action, SvCommandType::Once),
         Subcommands::Pause(action) => (action, SvCommandType::Pause),
         Subcommands::Continue(action) => (action, SvCommandType::Continue),
+        Subcommands::Term(action) => (action, SvCommandType::Terminate),
     };
 
     return (Service::new(action.service, config), sv_type);
