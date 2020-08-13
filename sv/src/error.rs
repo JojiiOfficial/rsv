@@ -14,6 +14,10 @@ pub enum Error {
     ParsingStatus(String),
     SuperviseAccessDenied(String),
     Timeout(String),
+    ServiceNotFound(String),
+    ServiceNotEnabled(String),
+    ServiceAlreadyEnabled(String),
+    ServiceAlreadyDisabled(String),
 }
 
 impl fmt::Display for Error {
@@ -37,6 +41,10 @@ impl Error {
             ),
             Error::ParsingStatus(s) => format!("{}: {}: unable to parse Status", FAIL, s),
             Error::Timeout(_) => format!("{}:", TIMEOUT),
+            Error::ServiceNotEnabled(name) => format!("Service '{}' not enabled", name),
+            Error::ServiceNotFound(name) => format!("Service '{}' not found", name),
+            Error::ServiceAlreadyEnabled(name) => format!("Service '{}' already enabled", name),
+            Error::ServiceAlreadyDisabled(name) => format!("Service '{}' already disabled", name),
         }
     }
 }

@@ -12,6 +12,7 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
+use crate::error::Error as err;
 use config::Config;
 
 // A sv command
@@ -79,14 +80,34 @@ impl Service {
         cmd: SvCommandType,
         timeout: Duration,
     ) -> Result<String, Box<dyn error::Error>> {
+        if !self.exists() {
+            return Err(Box::new(err::ServiceNotFound("".to_string())));
+        }
+
         Ok(match cmd {
-            SvCommandType::Status => self.status()?,
+            SvCommandType::Status => self.status(),
             SvCommandType::Enable => self.enable(),
             SvCommandType::Disable => self.disable(),
-            SvCommandType::Restart => self.restart(timeout)?,
+            SvCommandType::Restart => self.restart(timeout),
+            SvCommandType::Up => self.start(timeout, true),
 
-            _ => self.control(cmd, timeout, true)?,
-        })
+            _ => self.control(cmd, timeout, true),
+        }?)
+    }
+
+    pub fn start(
+        &self,
+        timeout: Duration,
+        kill_on_timeout: bool,
+    ) -> Result<String, Box<dyn error::Error>> {
+        self.check_exists()?;
+
+        if !self.is_enabled() {
+            self.enable()?;
+            sleep(Duration::from_millis(200));
+        }
+
+        self.control(SvCommandType::Up, timeout, kill_on_timeout)
     }
 
     pub fn control(
@@ -157,15 +178,21 @@ impl Service {
     }
 
     pub fn restart(&self, timeout: Duration) -> Result<String, Box<dyn error::Error>> {
-        self.run_control_cmd(SvCommandType::Down, timeout, true)?;
+        let status = self.read_status()?;
+        if status.state != ServiceState::Down {
+            self.run_control_cmd(SvCommandType::Down, timeout, true)?;
+        }
+
         self.run_control_cmd(SvCommandType::Up, timeout, true)?;
         sleep(Duration::from_millis(500));
+
         Ok(format!("ok: {}", self.status()?))
     }
 
     pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
-        let status = self.read_status()?;
+        self.check_enabled()?;
 
+        let status = self.read_status()?;
         let mut fmt: String = format!(
             "{}: {}: (pid {}) {}s",
             status.state.value(),
@@ -183,42 +210,27 @@ impl Service {
         Ok(fmt)
     }
 
-    pub fn enable(&self) -> String {
-        if !self.exists() {
-            return format!("Service '{}' not found", self.uri);
-        }
+    pub fn enable(&self) -> Result<String, Box<dyn error::Error>> {
+        self.check_exists()?;
+        self.check_already_enabled()?;
 
-        if self.is_enabled() {
-            return "Service is already enabled".to_string();
-        }
-
-        // create symlink
-        let symlink = ufs::symlink(
+        ufs::symlink(
             Path::new(&self.config.service_path).join(&self.uri),
             Path::new(&self.config.runsv_dir).join(&self.uri),
-        );
-        if let Err(e) = symlink {
-            format!("Error: {}", e);
-        }
+        )?;
 
-        format!("Service '{}' enabled successfully", self.uri)
+        Ok(format!("Service '{}' enabled successfully", self.uri))
     }
 
-    pub fn disable(&self) -> String {
-        if !self.exists() {
-            return format!("Service '{}' not found", self.uri);
-        }
+    pub fn disable(&self) -> Result<String, Box<dyn error::Error>> {
+        self.check_exists()?;
 
         if !self.is_enabled() {
-            return "Service is already disabled".to_string();
+            return Err(Box::new(err::ServiceAlreadyDisabled(self.uri.clone())));
         }
 
-        let sv_path = Path::new(&self.config.runsv_dir).join(&self.uri);
-        if let Err(e) = fs::remove_file(sv_path) {
-            return format!("Err: {}", e);
-        }
-
-        format!("Service '{}' disabled successfully", self.uri)
+        fs::remove_file(Path::new(&self.config.runsv_dir).join(&self.uri))?;
+        Ok(format!("Service '{}' disabled successfully", self.uri))
     }
 
     pub fn exists(&self) -> bool {
@@ -241,5 +253,26 @@ impl Service {
 
         let service = ServiceStatus::new(self, buff)?;
         Ok(service)
+    }
+
+    fn check_already_enabled(&self) -> Result<(), Box<dyn error::Error>> {
+        if self.is_enabled() {
+            return Err(Box::new(err::ServiceAlreadyEnabled(self.uri.clone())));
+        }
+        Ok(())
+    }
+
+    fn check_exists(&self) -> Result<(), Box<dyn error::Error>> {
+        if !self.exists() {
+            return Err(Box::new(err::ServiceNotFound(self.uri.clone())));
+        }
+        Ok(())
+    }
+
+    fn check_enabled(&self) -> Result<(), Box<dyn error::Error>> {
+        if !self.is_enabled() {
+            return Err(Box::new(err::ServiceNotEnabled(self.uri.clone())));
+        }
+        Ok(())
     }
 }

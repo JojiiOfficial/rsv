@@ -103,7 +103,7 @@ fn init_svdir(config: &mut Config) -> bool {
             continue;
         }
 
-        if was_p && arg.is_empty() && arg.starts_with('/') {
+        if was_p && !arg.is_empty() && arg.starts_with('/') {
             config.runsv_dir = arg.clone();
             return true;
         }
