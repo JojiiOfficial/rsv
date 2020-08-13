@@ -83,7 +83,7 @@ impl ServiceStatus {
             state,
             normallyup,
             paused: buff[16] > 0,
-            want: want,
+            want,
             term: buff[18] > 0,
         })
     }
@@ -153,7 +153,7 @@ impl ServiceStatus {
     }
 
     pub fn is_running(&self) -> bool {
-        return self.state == ServiceState::Run;
+        self.state == ServiceState::Run
     }
 }
 
@@ -182,7 +182,7 @@ fn parse_time(buff: &[u8; 20]) -> Duration {
     if sub_sec > now {
         return Duration::from_secs(0);
     }
-    return now - sub_sec;
+    now - sub_sec
 }
 
 fn parse_pid(buff: &[u8; 20]) -> i32 {

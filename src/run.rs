@@ -36,5 +36,5 @@ fn parse_subcommands(cmds: Subcommands, config: Config) -> (Service, SvCommandTy
         Subcommands::Kill(action) => (action, SvCommandType::Kill),
     };
 
-    return (Service::new(action.service, config), sv_type);
+    (Service::new(action.service, config), sv_type)
 }

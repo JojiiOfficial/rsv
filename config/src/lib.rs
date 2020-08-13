@@ -85,15 +85,14 @@ fn init_svdir(config: &mut Config) -> bool {
     let a = sys
         .get_process_list()
         .iter()
-        .filter(|(_, v)| v.name.contains("runsvdir"))
-        .nth(0);
+        .find(|(_, v)| v.name.contains("runsvdir"));
 
     let not_found_err = || {
         println!("Can't find runsvdir! make sure you have a running 'runsvdir' process!");
         process::exit(1);
     };
 
-    if let None = a {
+    if a.is_none() {
         not_found_err();
     }
 
@@ -104,7 +103,7 @@ fn init_svdir(config: &mut Config) -> bool {
             continue;
         }
 
-        if was_p && arg.len() > 0 && arg.starts_with("/") {
+        if was_p && arg.is_empty() && arg.starts_with('/') {
             config.runsv_dir = arg.clone();
             return true;
         }

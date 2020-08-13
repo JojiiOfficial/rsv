@@ -61,7 +61,7 @@ impl Service {
     pub fn new(uri: String, settings: Config) -> Service {
         Service {
             uri,
-            config: settings.clone(),
+            config: settings,
         }
     }
 
@@ -70,7 +70,7 @@ impl Service {
             .join(&self.uri)
             .join(kfile.to_string());
 
-        return OsString::from(&a.as_os_str());
+        OsString::from(&a.as_os_str())
     }
 
     /// Run a sv command
@@ -222,9 +222,9 @@ impl Service {
     }
 
     pub fn exists(&self) -> bool {
-        return Path::new(&self.config.service_path)
+        Path::new(&self.config.service_path)
             .join(&self.uri)
-            .exists();
+            .exists()
     }
 
     pub fn is_enabled(&self) -> bool {
@@ -240,6 +240,6 @@ impl Service {
         f.read_exact(&mut buff).expect("read error");
 
         let service = ServiceStatus::new(self, buff)?;
-        return Ok(service);
+        Ok(service)
     }
 }
