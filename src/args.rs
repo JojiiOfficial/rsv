@@ -56,11 +56,26 @@ pub enum Subcommands {
 
     #[structopt(about = "Send SIGKILL if service is running")]
     Kill(ServiceAction),
+
+    #[structopt(about = "List services")]
+    List(ListAction),
 }
 
 #[derive(StructOpt, Debug)]
 pub struct ServiceAction {
     pub service: String,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct ListAction {
+    #[structopt(short, long)]
+    pub all: bool,
+
+    #[structopt(short, long)]
+    pub running: bool,
+
+    #[structopt(short, long)]
+    pub stopped: bool,
 }
 
 impl AppArgs {

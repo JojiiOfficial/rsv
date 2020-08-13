@@ -1,7 +1,8 @@
 use std::error;
+use std::process;
 use std::time::Duration;
 
-use crate::args::{AppArgs, Subcommands};
+use crate::args::{AppArgs, ListAction, Subcommands};
 
 use config::Config;
 use sv::cmdtype::SvCommandType;
@@ -10,6 +11,10 @@ use sv::service::Service;
 // Run the app
 pub fn run(opts: AppArgs) -> Result<String, Box<dyn error::Error>> {
     let config = Config::new()?;
+
+    if let Subcommands::List(list_options) = opts.cmd {
+        return run_list_command(list_options, config);
+    }
 
     let (service, cmd_type) = parse_subcommands(opts.cmd, config);
 
@@ -34,7 +39,26 @@ fn parse_subcommands(cmds: Subcommands, config: Config) -> (Service, SvCommandTy
         Subcommands::Alarm(action) => (action, SvCommandType::Alarm),
         Subcommands::Interrupt(action) => (action, SvCommandType::Interrupt),
         Subcommands::Kill(action) => (action, SvCommandType::Kill),
+        _ => process::exit(1),
     };
 
     (Service::new(action.service, config), sv_type)
+}
+
+pub fn run_list_command(
+    list_options: ListAction,
+    config: Config,
+) -> Result<String, Box<dyn error::Error>> {
+    let dir = config.runsv_dir.clone();
+    let services = Service::get_all_services(config, &dir)?.into_iter();
+
+    for item in services {
+        print!("{}", item.status().unwrap());
+    }
+
+    Ok("".to_string())
+}
+
+fn format_services(services: Vec<Service>) -> String {
+    "".to_string()
 }

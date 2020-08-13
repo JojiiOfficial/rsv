@@ -7,6 +7,7 @@ use std::fs;
 use std::io::BufReader;
 use std::io::{Read, Write};
 use std::ops::Add;
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs as ufs;
 use std::path::Path;
 use std::thread::sleep;
@@ -74,15 +75,30 @@ impl Service {
         OsString::from(&a.as_os_str())
     }
 
+    pub fn get_all_services(config: Config, dir: &str) -> Result<Vec<Self>, Box<dyn error::Error>> {
+        let mut services: Vec<Self> = Vec::new();
+
+        fs::read_dir(dir)?.for_each(|item| {
+            if let Err(_) = item {
+                return;
+            }
+
+            services.push(Service::new(
+                String::from_utf8(item.unwrap().file_name().as_bytes().into()).unwrap(),
+                config.clone(),
+            ))
+        });
+
+        Ok(services)
+    }
+
     /// Run a sv command
     pub fn run(
         &self,
         cmd: SvCommandType,
         timeout: Duration,
     ) -> Result<String, Box<dyn error::Error>> {
-        if !self.exists() {
-            return Err(Box::new(err::ServiceNotFound("".to_string())));
-        }
+        self.check_exists()?;
 
         Ok(match cmd {
             SvCommandType::Status => self.status(),
@@ -243,7 +259,7 @@ impl Service {
         Path::new(&self.config.runsv_dir).join(&self.uri).exists()
     }
 
-    fn read_status(&self) -> Result<ServiceStatus, Box<dyn error::Error>> {
+    pub fn read_status(&self) -> Result<ServiceStatus, Box<dyn error::Error>> {
         let status_path = self.get_file_path(ServiceFile::Status);
         let f = fs::OpenOptions::new().read(true).open(&status_path)?;
 
