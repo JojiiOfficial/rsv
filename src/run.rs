@@ -50,31 +50,34 @@ pub fn run_list_command(
     list_options: ListAction,
     config: Config,
 ) -> Result<String, Box<dyn error::Error>> {
-    let dir = config.runsv_dir.clone();
+    Ok(format_services(
+        Service::get_all_services(config)?
+            .into_iter()
+            .filter(|f| match f.read_status() {
+                Ok(status) => {
+                    if list_options.down && status.state != ServiceState::Down {
+                        return false;
+                    }
 
-    let services = Service::get_all_services(config, &dir)?
-        .into_iter()
-        .filter(|f| match f.read_status() {
-            Ok(status) => {
-                if list_options.down {
-                    return status.state == ServiceState::Down;
+                    if list_options.up && status.state != ServiceState::Run {
+                        return false;
+                    }
+
+                    true
                 }
-
-                if list_options.up {
-                    return status.state == ServiceState::Run;
+                Err(err) => {
+                    println!("{:?}, {}", f, err);
+                    //process::exit(1);
+                    false
                 }
-
-                true
-            }
-            Err(_) => false,
-        })
-        .collect();
-
-    Ok(format_services(services))
+            })
+            .collect(),
+    ))
 }
 
 fn format_services(services: Vec<Service>) -> String {
     let mut s = String::new();
+
     for item in services {
         s.push_str(format!("{}", item.status().unwrap()).as_str());
     }

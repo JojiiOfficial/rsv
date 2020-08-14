@@ -75,19 +75,21 @@ impl Service {
         OsString::from(&a.as_os_str())
     }
 
-    pub fn get_all_services(config: Config, dir: &str) -> Result<Vec<Self>, Box<dyn error::Error>> {
+    pub fn get_all_services(config: Config) -> Result<Vec<Self>, Box<dyn error::Error>> {
         let mut services: Vec<Self> = Vec::new();
 
-        fs::read_dir(dir)?.for_each(|item| {
-            if let Err(_) = item {
-                return;
-            }
+        for dir in [&config.runsv_dir, &config.service_path].iter() {
+            for item in fs::read_dir(&dir)? {
+                if item.is_err() {
+                    return Err(Box::new(item.err().unwrap()));
+                }
 
-            services.push(Service::new(
-                String::from_utf8(item.unwrap().file_name().as_bytes().into()).unwrap(),
-                config.clone(),
-            ))
-        });
+                services.push(Service::new(
+                    String::from_utf8(item.unwrap().file_name().as_bytes().into()).unwrap(),
+                    config.clone(),
+                ));
+            }
+        }
 
         Ok(services)
     }

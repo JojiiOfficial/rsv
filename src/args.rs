@@ -76,6 +76,12 @@ pub struct ListAction {
 
     #[structopt(short, long)]
     pub down: bool,
+
+    #[structopt(long)]
+    pub enabled: bool,
+
+    #[structopt(long)]
+    pub disabled: bool,
 }
 
 impl AppArgs {
