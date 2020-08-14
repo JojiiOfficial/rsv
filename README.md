@@ -23,14 +23,20 @@ OPTIONS:
     -t, --timeout <timeout>
 
 SUBCOMMANDS:
-    continue    Send SIGCONT if service is running
-    disable     Disable a service
-    enable      Enable a service
-    help        Prints this message or the help of the given subcommand(s)
-    once        Start if service is not running. Do not restart if it stops
-    pause       Send SIGSTOP if service is running
-    restart     Restart a service
-    start       Start a service
-    status      Status a service
-    stop        Stop a service
+    alarm        Send SIGALARM if service is running
+    continue     Send SIGCONT if service is running
+    disable      Disable a service
+    enable       Enable a service
+    help         Prints this message or the help of the given subcommand(s)
+    hup          Send SIGHUP if service is running
+    interrupt    Send SIGINT if service is running
+    kill         Send SIGKILL if service is running
+    list         List services
+    once         Start if service is not running. Do not restart if it stops
+    pause        Send SIGSTOP if service is running
+    restart      Restart a service
+    start        Start a service
+    status       Status a service
+    stop         Stop a service
+    term         Send SIGTERM if service is running
 ```
