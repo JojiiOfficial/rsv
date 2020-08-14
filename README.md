@@ -3,8 +3,14 @@ The runit sv command rewritten in rust with additional features.
 
 # Additional features
 - Enable/Disable services (automatically creating a symlink)
+- Listing services
 - Custom timeout
 - Much cleaner code than the original sv command
+
+# Installation
+Run `make release` and `sudo make install`.<br>
+
+(Gonna put this into the AUR later)
 
 # Usage
 ```bash
