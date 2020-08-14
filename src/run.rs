@@ -7,6 +7,7 @@ use crate::args::{AppArgs, ListAction, Subcommands};
 use config::Config;
 use sv::cmdtype::SvCommandType;
 use sv::service::Service;
+use sv::status::ServiceState;
 
 // Run the app
 pub fn run(opts: AppArgs) -> Result<String, Box<dyn error::Error>> {
@@ -50,15 +51,33 @@ pub fn run_list_command(
     config: Config,
 ) -> Result<String, Box<dyn error::Error>> {
     let dir = config.runsv_dir.clone();
-    let services = Service::get_all_services(config, &dir)?.into_iter();
 
-    for item in services {
-        print!("{}", item.status().unwrap());
-    }
+    let services = Service::get_all_services(config, &dir)?
+        .into_iter()
+        .filter(|f| match f.read_status() {
+            Ok(status) => {
+                if list_options.down {
+                    return status.state == ServiceState::Down;
+                }
 
-    Ok("".to_string())
+                if list_options.up {
+                    return status.state == ServiceState::Run;
+                }
+
+                true
+            }
+            Err(_) => false,
+        })
+        .collect();
+
+    Ok(format_services(services))
 }
 
 fn format_services(services: Vec<Service>) -> String {
-    "".to_string()
+    let mut s = String::new();
+    for item in services {
+        s.push_str(format!("{}", item.status().unwrap()).as_str());
+    }
+
+    s
 }

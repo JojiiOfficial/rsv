@@ -72,10 +72,10 @@ pub struct ListAction {
     pub all: bool,
 
     #[structopt(short, long)]
-    pub running: bool,
+    pub up: bool,
 
     #[structopt(short, long)]
-    pub stopped: bool,
+    pub down: bool,
 }
 
 impl AppArgs {
