@@ -13,7 +13,7 @@ Run `make release` and `sudo make install`.<br>
 (Gonna put this into the AUR later)
 
 # Usage
-```bash
+```txt
 rsv 0.1.0
 A tool to maintain runit services like systemd services
 
