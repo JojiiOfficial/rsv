@@ -63,3 +63,8 @@ sudo rsv enable cupsd # enabled cupsd
 ```bash
 sudo rsv start cupsd # start cupsd service (enable if service is disabled)
 ```
+
+# TODO
+- [x] Listing services
+- [ ] Shell completion
+- [ ] Improving Envar usage (Fix multiuser support)
