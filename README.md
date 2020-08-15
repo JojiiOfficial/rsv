@@ -14,7 +14,7 @@ Run `make release` and `sudo make install`.<br>
 
 # Usage
 ```txt
-rsv 0.1.0
+rsv 1.1.0
 A tool to maintain runit services like systemd services
 
 USAGE:
