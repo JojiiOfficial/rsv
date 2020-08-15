@@ -46,3 +46,20 @@ SUBCOMMANDS:
     stop         Stop a service
     term         Send SIGTERM if service is running
 ```
+
+# Examples
+```bash
+sudo rsv list --disabled/--enabled # list all disabled/enabled services 
+```
+
+```bash
+sudo rsv list --enabled --down # list all enabled services which aren't running
+```
+
+```bash
+sudo rsv enable cupsd # enabled cupsd
+```
+
+```bash
+sudo rsv start cupsd # start cupsd service (enable if service is disabled)
+```
