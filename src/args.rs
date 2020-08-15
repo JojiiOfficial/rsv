@@ -77,7 +77,7 @@ pub struct ListAction {
     #[structopt(short, long)]
     pub down: bool,
 
-    #[structopt(long)]
+    #[structopt(short, long)]
     pub enabled: bool,
 
     #[structopt(long)]

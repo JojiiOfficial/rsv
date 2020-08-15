@@ -7,7 +7,6 @@ use std::fs;
 use std::io::BufReader;
 use std::io::{Read, Write};
 use std::ops::Add;
-use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs as ufs;
 use std::path::Path;
 use std::thread::sleep;
@@ -21,6 +20,13 @@ use config::Config;
 pub struct Service {
     pub uri: String,
     config: Config,
+    pub src: ServiceSrc,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ServiceSrc {
+    RunSvDir,
+    ServiceDir,
 }
 
 pub enum ServiceFile {
@@ -60,10 +66,11 @@ impl ServiceFile {
 
 impl Service {
     /// Create a new SvCommand object
-    pub fn new(uri: String, settings: Config) -> Service {
+    pub fn new(uri: String, settings: Config, src: ServiceSrc) -> Service {
         Service {
             uri,
             config: settings,
+            src,
         }
     }
 
@@ -78,16 +85,24 @@ impl Service {
     pub fn get_all_services(config: Config) -> Result<Vec<Self>, Box<dyn error::Error>> {
         let mut services: Vec<Self> = Vec::new();
 
-        for dir in [&config.runsv_dir, &config.service_path].iter() {
+        for (dir, src) in [
+            (&config.runsv_dir, ServiceSrc::RunSvDir),
+            (&config.service_path, ServiceSrc::ServiceDir),
+        ]
+        .iter()
+        {
             for item in fs::read_dir(&dir)? {
                 if item.is_err() {
                     return Err(Box::new(item.err().unwrap()));
                 }
 
-                services.push(Service::new(
-                    String::from_utf8(item.unwrap().file_name().as_bytes().into()).unwrap(),
-                    config.clone(),
-                ));
+                let service_uri = item.unwrap().file_name().into_string().unwrap();
+
+                if services.iter().find(|s| s.uri == service_uri).is_some() {
+                    continue;
+                }
+
+                services.push(Service::new(service_uri, config.clone(), src.clone()));
             }
         }
 
@@ -209,8 +224,10 @@ impl Service {
 
     pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
         self.check_enabled()?;
+        Ok(self.format_status(self.read_status()?))
+    }
 
-        let status = self.read_status()?;
+    pub fn format_status(&self, status: ServiceStatus) -> String {
         let mut fmt: String = format!(
             "{}: {}: (pid {}) {}s",
             status.state.value(),
@@ -225,7 +242,7 @@ impl Service {
         }
 
         fmt.push('\n');
-        Ok(fmt)
+        fmt
     }
 
     pub fn enable(&self) -> Result<String, Box<dyn error::Error>> {
@@ -261,9 +278,16 @@ impl Service {
         Path::new(&self.config.runsv_dir).join(&self.uri).exists()
     }
 
-    pub fn read_status(&self) -> Result<ServiceStatus, Box<dyn error::Error>> {
+    pub fn read_status(&self) -> Result<ServiceStatus, err> {
+        if self.src == ServiceSrc::ServiceDir {
+            return Ok(ServiceStatus::no_state_available());
+        }
+
         let status_path = self.get_file_path(ServiceFile::Status);
-        let f = fs::OpenOptions::new().read(true).open(&status_path)?;
+        let f = match fs::OpenOptions::new().read(true).open(&status_path) {
+            Ok(file) => file,
+            Err(error) => return Err(err::IoError(error)),
+        };
 
         let mut f = BufReader::new(f);
         let mut buff = [0; 20];
@@ -287,9 +311,9 @@ impl Service {
         Ok(())
     }
 
-    fn check_enabled(&self) -> Result<(), Box<dyn error::Error>> {
+    fn check_enabled(&self) -> Result<(), err> {
         if !self.is_enabled() {
-            return Err(Box::new(err::ServiceNotEnabled(self.uri.clone())));
+            return Err(err::ServiceNotEnabled(self.uri.clone()));
         }
         Ok(())
     }

@@ -6,7 +6,7 @@ use crate::args::{AppArgs, ListAction, Subcommands};
 
 use config::Config;
 use sv::cmdtype::SvCommandType;
-use sv::service::Service;
+use sv::service::{Service, ServiceSrc};
 use sv::status::ServiceState;
 
 // Run the app
@@ -43,7 +43,10 @@ fn parse_subcommands(cmds: Subcommands, config: Config) -> (Service, SvCommandTy
         _ => process::exit(1),
     };
 
-    (Service::new(action.service, config), sv_type)
+    (
+        Service::new(action.service, config, ServiceSrc::RunSvDir),
+        sv_type,
+    )
 }
 
 pub fn run_list_command(
@@ -59,6 +62,14 @@ pub fn run_list_command(
                         return false;
                     }
 
+                    if list_options.enabled && f.src == ServiceSrc::ServiceDir {
+                        return false;
+                    }
+
+                    if list_options.disabled && f.src == ServiceSrc::RunSvDir {
+                        return false;
+                    }
+
                     if list_options.up && status.state != ServiceState::Run {
                         return false;
                     }
@@ -66,8 +77,7 @@ pub fn run_list_command(
                     true
                 }
                 Err(err) => {
-                    println!("{:?}, {}", f, err);
-                    //process::exit(1);
+                    eprintln!("'{}', {}", f.uri, err);
                     false
                 }
             })
@@ -79,7 +89,13 @@ fn format_services(services: Vec<Service>) -> String {
     let mut s = String::new();
 
     for item in services {
-        s.push_str(format!("{}", item.status().unwrap()).as_str());
+        let status = item.read_status();
+
+        if !status.is_ok() {
+            return format!("{}", status.err().unwrap());
+        }
+
+        s.push_str(format!("{}", item.format_status(status.unwrap())).as_str());
     }
 
     s

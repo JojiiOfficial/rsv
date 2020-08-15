@@ -1,5 +1,6 @@
 use std::error;
 use std::fmt;
+use std::io;
 
 pub const FATAL: &str = "fatal";
 pub const FAIL: &str = "fail";
@@ -18,6 +19,7 @@ pub enum Error {
     ServiceNotEnabled(String),
     ServiceAlreadyEnabled(String),
     ServiceAlreadyDisabled(String),
+    IoError(io::Error),
 }
 
 impl fmt::Display for Error {
@@ -45,6 +47,7 @@ impl Error {
             Error::ServiceNotFound(name) => format!("Service '{}' not found", name),
             Error::ServiceAlreadyEnabled(name) => format!("Service '{}' already enabled", name),
             Error::ServiceAlreadyDisabled(name) => format!("Service '{}' already disabled", name),
+            Error::IoError(err) => format!("{}", err),
         }
     }
 }
