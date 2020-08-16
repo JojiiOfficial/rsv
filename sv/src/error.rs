@@ -14,7 +14,8 @@ pub enum Error {
     DirNotFound(String),
     ParsingStatus(String),
     SuperviseAccessDenied(String),
-    Timeout(String),
+    Timeout(),
+    ForceKilled(),
     ServiceNotFound(String),
     ServiceNotEnabled(String),
     ServiceAlreadyEnabled(String),
@@ -42,12 +43,13 @@ impl Error {
                 FAIL, s
             ),
             Error::ParsingStatus(s) => format!("{}: {}: unable to parse Status", FAIL, s),
-            Error::Timeout(_) => format!("{}:", TIMEOUT),
+            Error::Timeout() => format!("{}:", TIMEOUT),
             Error::ServiceNotEnabled(name) => format!("Service '{}' not enabled", name),
             Error::ServiceNotFound(name) => format!("Service '{}' not found", name),
             Error::ServiceAlreadyEnabled(name) => format!("Service '{}' already enabled", name),
             Error::ServiceAlreadyDisabled(name) => format!("Service '{}' already disabled", name),
             Error::IoError(err) => format!("{}", err),
+            Error::ForceKilled() => format!("killed"),
         }
     }
 }

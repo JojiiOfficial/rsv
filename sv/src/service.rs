@@ -133,11 +133,7 @@ impl Service {
         }?)
     }
 
-    pub fn start(
-        &self,
-        timeout: Duration,
-        kill_on_timeout: bool,
-    ) -> Result<String, Box<dyn error::Error>> {
+    pub fn start(&self, timeout: Duration, kill_on_timeout: bool) -> Result<String, err> {
         self.check_exists()?;
 
         if !self.is_enabled() {
@@ -153,7 +149,7 @@ impl Service {
         cmd: SvCommandType,
         timeout: Duration,
         kill_on_timeout: bool,
-    ) -> Result<String, Box<dyn error::Error>> {
+    ) -> Result<String, err> {
         let pre = self.run_control_cmd(cmd, timeout, kill_on_timeout)?;
         Ok(format!("{}: {}", pre, self.status()?))
     }
@@ -163,13 +159,20 @@ impl Service {
         cmd: SvCommandType,
         timeout: Duration,
         kill_on_timeout: bool,
-    ) -> Result<String, Box<dyn error::Error>> {
+    ) -> Result<String, err> {
         // Write control char into the
         // control file of the service
-        fs::OpenOptions::new()
+        let mut file = match fs::OpenOptions::new()
             .write(true)
-            .open(self.get_file_path(ServiceFile::Control))?
-            .write_all(cmd.value().unwrap().as_bytes())?;
+            .open(self.get_file_path(ServiceFile::Control))
+        {
+            Ok(f) => f,
+            Err(err) => return Err(err::IoError(err)),
+        };
+
+        if let Err(err) = file.write_all(cmd.value().unwrap().as_bytes()) {
+            return Err(err::IoError(err));
+        }
 
         // Wait for the command to take effect
         // print the result
@@ -181,16 +184,18 @@ impl Service {
         cmd: SvCommandType,
         timeout: Duration,
         kill_on_timeout: bool,
-    ) -> Result<String, Box<dyn error::Error>> {
+    ) -> Result<String, err> {
         let end = SystemTime::now().add(timeout);
         loop {
             sleep(Duration::from_millis(40));
 
             if end < SystemTime::now() {
                 if kill_on_timeout {
-                    return self.control(SvCommandType::Kill, timeout, false);
+                    self.control(SvCommandType::Kill, timeout, false)?;
+                    return Err(err::ForceKilled());
                 }
-                return Ok("timeout".to_string());
+
+                return Err(err::Timeout());
             }
 
             let status = self.read_status()?;
@@ -215,7 +220,7 @@ impl Service {
         Ok("ok".to_string())
     }
 
-    pub fn restart(&self, timeout: Duration) -> Result<String, Box<dyn error::Error>> {
+    pub fn restart(&self, timeout: Duration) -> Result<String, err> {
         let status = self.read_status()?;
         if status.state != ServiceState::Down {
             self.run_control_cmd(SvCommandType::Down, timeout, true)?;
@@ -227,7 +232,7 @@ impl Service {
         Ok(format!("ok: {}", self.status()?))
     }
 
-    pub fn status(&self) -> Result<String, Box<dyn error::Error>> {
+    pub fn status(&self) -> Result<String, err> {
         self.check_enabled()?;
         Ok(self.format_status(self.read_status()?))
     }
@@ -250,26 +255,31 @@ impl Service {
         fmt
     }
 
-    pub fn enable(&self) -> Result<String, Box<dyn error::Error>> {
+    pub fn enable(&self) -> Result<String, err> {
         self.check_exists()?;
         self.check_already_enabled()?;
 
-        ufs::symlink(
+        if let Err(err) = ufs::symlink(
             Path::new(&self.config.service_path).join(&self.uri),
             Path::new(&self.config.runsv_dir).join(&self.uri),
-        )?;
+        ) {
+            return Err(err::IoError(err));
+        };
 
         Ok(format!("Service '{}' enabled successfully\n", self.uri))
     }
 
-    pub fn disable(&self) -> Result<String, Box<dyn error::Error>> {
+    pub fn disable(&self) -> Result<String, err> {
         self.check_exists()?;
 
         if !self.is_enabled() {
-            return Err(Box::new(err::ServiceAlreadyDisabled(self.uri.clone())));
+            return Err(err::ServiceAlreadyDisabled(self.uri.clone()));
         }
 
-        fs::remove_file(Path::new(&self.config.runsv_dir).join(&self.uri))?;
+        if let Err(err) = fs::remove_file(Path::new(&self.config.runsv_dir).join(&self.uri)) {
+            return Err(err::IoError(err));
+        }
+
         Ok(format!("Service '{}' disabled successfully\n", self.uri))
     }
 
@@ -302,16 +312,16 @@ impl Service {
         Ok(service)
     }
 
-    fn check_already_enabled(&self) -> Result<(), Box<dyn error::Error>> {
+    fn check_already_enabled(&self) -> Result<(), err> {
         if self.is_enabled() {
-            return Err(Box::new(err::ServiceAlreadyEnabled(self.uri.clone())));
+            return Err(err::ServiceAlreadyEnabled(self.uri.clone()));
         }
         Ok(())
     }
 
-    fn check_exists(&self) -> Result<(), Box<dyn error::Error>> {
+    fn check_exists(&self) -> Result<(), err> {
         if !self.exists() {
-            return Err(Box::new(err::ServiceNotFound(self.uri.clone())));
+            return Err(err::ServiceNotFound(self.uri.clone()));
         }
         Ok(())
     }
