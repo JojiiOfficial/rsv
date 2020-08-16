@@ -1,3 +1,5 @@
+default: release
+
 build: 
 	cargo build
 
@@ -10,6 +12,8 @@ clean:
 run: build
 	./target/debug/rsv
 
+all: build release
+
 install:
 	@if ! test -f target/release/rsv;then echo 'run "make release" first'; exit 1; fi
 ifneq ($(shell id -u), 0)
@@ -17,3 +21,4 @@ ifneq ($(shell id -u), 0)
 	@exit 1
 endif
 	cp ./target/release/rsv /bin/
+

@@ -3,10 +3,11 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::error;
 use std::fs::{self, create_dir_all, File};
-use std::io::Write;
+use std::io::{self, stdin, Error, Write};
 use std::path::{self, Path};
 use std::process;
 
+use sys_info;
 use sysinfo::SystemExt;
 
 pub const DEFAULT_CONF_PATH: &str = "/etc/runitsv/";
@@ -20,9 +21,64 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
+        // TODO distro test
+        let mut service_path = String::new();
+
+        if sys_info::linux_os_release()
+            .and_then(|f| {
+                let release;
+
+                if f.id.is_some() {
+                    release = f.id.unwrap();
+                } else if f.name.is_some() {
+                    release = f.name.unwrap()
+                } else {
+                    println!("Release is empty");
+                    return Err(sys_info::Error::IO(Error::new(io::ErrorKind::NotFound, "")));
+                }
+
+                match release.to_lowercase().as_str() {
+                    "artix" => service_path = String::from("/etc/runit/sv/"),
+                    "void" => service_path = String::from("/etc/sv/"),
+                    // TODO add other runit based distros
+                    //
+                    _ => {
+                        return Err(sys_info::Error::IO(Error::new(io::ErrorKind::NotFound, "")));
+                    }
+                };
+
+                Ok(())
+            })
+            .is_err()
+            || service_path.is_empty()
+        {
+            println!("Coludn't find your service source path!");
+            println!("Enter your service source dir manually (keep empty to skip):");
+
+            // Check if path exists
+            loop {
+                stdin()
+                    .read_line(&mut service_path)
+                    .expect("Error reading from stdin");
+
+                if service_path.is_empty() {
+                    break;
+                }
+
+                service_path = service_path.trim().to_owned();
+                if !Path::new(&service_path).exists() {
+                    println!("Path does not exists!");
+                    service_path = String::new();
+                    continue;
+                }
+
+                break;
+            }
+        }
+
         Config {
-            runsv_dir: "".into(),
-            service_path: "/etc/runit/sv".into(),
+            runsv_dir: String::new(),
+            service_path,
         }
     }
 }
