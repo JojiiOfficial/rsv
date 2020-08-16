@@ -91,7 +91,12 @@ impl Service {
         ]
         .iter()
         {
-            for item in fs::read_dir(&dir)? {
+            let dir_entries = match fs::read_dir(&dir){
+                Ok(de) => de,
+                Err(_) => continue,
+            };
+
+            for item in dir_entries {
                 if item.is_err() {
                     return Err(Box::new(item.err().unwrap()));
                 }
