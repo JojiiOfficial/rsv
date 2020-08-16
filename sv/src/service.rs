@@ -91,7 +91,7 @@ impl Service {
         ]
         .iter()
         {
-            let dir_entries = match fs::read_dir(&dir){
+            let dir_entries = match fs::read_dir(&dir) {
                 Ok(de) => de,
                 Err(_) => continue,
             };
@@ -259,7 +259,7 @@ impl Service {
             Path::new(&self.config.runsv_dir).join(&self.uri),
         )?;
 
-        Ok(format!("Service '{}' enabled successfully", self.uri))
+        Ok(format!("Service '{}' enabled successfully\n", self.uri))
     }
 
     pub fn disable(&self) -> Result<String, Box<dyn error::Error>> {
@@ -270,7 +270,7 @@ impl Service {
         }
 
         fs::remove_file(Path::new(&self.config.runsv_dir).join(&self.uri))?;
-        Ok(format!("Service '{}' disabled successfully", self.uri))
+        Ok(format!("Service '{}' disabled successfully\n", self.uri))
     }
 
     pub fn exists(&self) -> bool {
