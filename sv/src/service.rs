@@ -176,7 +176,14 @@ impl Service {
 
         // Wait for the command to take effect
         // print the result
-        Ok(self.await_command(cmd, timeout, kill_on_timeout)?)
+        match self.await_command(cmd, timeout, kill_on_timeout) {
+            Ok(s) => Ok(s),
+            Err(err) => match err {
+                err::Timeout() => Ok("timeout".to_owned()),
+                err::ForceKilled() => Ok("fkilled".to_owned()),
+                _ => Err(err),
+            },
+        }
     }
 
     fn await_command(
