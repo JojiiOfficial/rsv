@@ -8,9 +8,11 @@ The runit sv command rewritten in rust with additional features.
 - Much cleaner code than the original sv command
 
 # Installation
+### Manually
 Run `make release` and `sudo make install`.<br>
 
-(Gonna put this into the AUR later)
+### Artix linux (AUR)
+`yay -S rsv` (Other AUR helpers will work too)
 
 # Usage
 ```txt
