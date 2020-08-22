@@ -3,8 +3,15 @@ name = "rsv"
 version = "1.1.0"
 authors = ["jojii <jojii@gmx.net>"]
 edition = "2018"
+description = "The runit sv command rewritten in rust with additional features"
+license = "GPL-3.0"
+readme = "README.md"
+homepage =""
+repository="https://github.com/JojiiOfficial/rsv"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.arch]
+arch = ["x86_64"]
+provides = ["rsv"]
 
 [dependencies]
 sv = {path="sv"}
