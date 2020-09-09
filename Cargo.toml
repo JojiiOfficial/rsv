@@ -16,4 +16,4 @@ provides = ["rsv"]
 [dependencies]
 sv = {path="sv"}
 config = {path="config"}
-structopt = { version = "0.3", default-features = false }
+structopt = { version = "0.3.17", default-features = false }
