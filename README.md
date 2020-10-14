@@ -8,6 +8,8 @@ The runit sv command rewritten in rust with additional features.
 - Much cleaner code than the original sv command
 
 # Installation
+### Required
+Rust Programming Language Installed.
 ### Manually
 Run `make release` and `sudo make install`.<br>
 
