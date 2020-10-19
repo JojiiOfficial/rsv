@@ -1,13 +1,10 @@
 mod args;
-mod run;
 mod config;
+mod run;
 mod sv;
 
-
 fn main() {
-    let opt = args::AppArgs::parse();
-
-    match run::run(opt) {
+    match run::run(args::get_cli()) {
         Ok(s) => print!("{}", s),
         Err(e) => eprintln!("An error occured: {}", e),
     }

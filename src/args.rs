@@ -1,91 +1,88 @@
-use structopt::StructOpt;
+use clap::{crate_version, App, AppSettings, Arg};
 
-#[derive(Debug, StructOpt)]
-pub struct AppArgs {
-    #[structopt(short, long, parse(from_occurrences))]
-    pub verbose: u32,
-
-    #[structopt(short, long, global = true)]
-    pub timeout: Option<u64>,
-
-    #[structopt(subcommand)]
-    pub cmd: Subcommands,
+fn get_base_app_struct<S: AsRef<str>>(name: S, about: &'static str) -> App<'static> {
+    App::new(name.as_ref().to_string())
+        .setting(AppSettings::TrailingVarArg)
+        .setting(AppSettings::ColoredHelp)
+        .about(about.as_ref())
 }
 
-#[derive(StructOpt, Debug)]
-#[structopt(about = "A tool to maintain runit services like systemd services")]
-pub enum Subcommands {
-    #[structopt(about = "Enable a service")]
-    Enable(ServiceAction),
-
-    #[structopt(about = "Disable a service")]
-    Disable(ServiceAction),
-
-    #[structopt(about = "Start a service")]
-    Start(ServiceAction),
-
-    #[structopt(about = "Stop a service")]
-    Stop(ServiceAction),
-
-    #[structopt(about = "Status a service")]
-    Status(ServiceAction),
-
-    #[structopt(about = "Restart a service")]
-    Restart(ServiceAction),
-
-    #[structopt(about = "Start if service is not running. Do not restart if it stops")]
-    Once(ServiceAction),
-
-    #[structopt(about = "Send SIGSTOP if service is running")]
-    Pause(ServiceAction),
-
-    #[structopt(about = "Send SIGCONT if service is running")]
-    Continue(ServiceAction),
-
-    #[structopt(about = "Send SIGTERM if service is running")]
-    Term(ServiceAction),
-
-    #[structopt(about = "Send SIGHUP if service is running")]
-    Hup(ServiceAction),
-
-    #[structopt(about = "Send SIGALARM if service is running")]
-    Alarm(ServiceAction),
-
-    #[structopt(about = "Send SIGINT if service is running")]
-    Interrupt(ServiceAction),
-
-    #[structopt(about = "Send SIGKILL if service is running")]
-    Kill(ServiceAction),
-
-    #[structopt(about = "List services")]
-    List(ListAction),
+fn get_service_subcommand<S: AsRef<str>>(name: S, about: &'static str) -> App<'static> {
+    get_base_app_struct(name, about)
+        .about(about.as_ref())
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .arg(
+            Arg::new("service")
+                .about("Specify the service")
+                .required(true)
+                .takes_value(true),
+        )
 }
 
-#[derive(StructOpt, Debug)]
-pub struct ServiceAction {
-    pub service: String,
-}
-
-#[derive(StructOpt, Debug)]
-pub struct ListAction {
-    #[structopt(short, long)]
-    pub all: bool,
-
-    #[structopt(short, long)]
-    pub up: bool,
-
-    #[structopt(short, long)]
-    pub down: bool,
-
-    #[structopt(short, long)]
-    pub enabled: bool,
-
-    #[structopt(long)]
-    pub disabled: bool,
-}
-
-impl AppArgs {
-    pub fn parse() -> AppArgs {
-        AppArgs::from_args()
-    }
+pub fn get_cli() -> App<'static> {
+    get_base_app_struct(
+        "rsv",
+        "A tool to maintain runit services like systemd services",
+    )
+    .setting(AppSettings::ArgRequiredElseHelp)
+    .version(crate_version!())
+    .author("Jojii S")
+    .arg(Arg::new("verbose").short('v').long("verbose").global(true))
+    .arg(
+        Arg::new("timeout")
+            .short('t')
+            .long("timeout")
+            .global(true)
+            .takes_value(true),
+    )
+    .subcommand(get_service_subcommand("enable", "Enable a service"))
+    .subcommand(get_service_subcommand("disable", "Disable a service"))
+    .subcommand(get_service_subcommand("start", "Start a service"))
+    .subcommand(get_service_subcommand("stop", "Stop a service"))
+    .subcommand(get_service_subcommand("restart", "Restart a service"))
+    .subcommand(get_service_subcommand(
+        "status",
+        "Get the status of a service",
+    ))
+    .subcommand(get_service_subcommand(
+        "once",
+        "Start if service is not running. Do not restart if it stops",
+    ))
+    .subcommand(get_service_subcommand(
+        "pause",
+        "Send SIGSTOP if the service is running",
+    ))
+    .subcommand(get_service_subcommand(
+        "continue",
+        "Send SIGCONT if the service is running",
+    ))
+    .subcommand(get_service_subcommand(
+        "term",
+        "Send SIGTERM if the service is running",
+    ))
+    .subcommand(get_service_subcommand(
+        "hup",
+        "Send SIGHUP if the service is running",
+    ))
+    .subcommand(get_service_subcommand(
+        "alarm",
+        "Send SIGALARM if the service is running",
+    ))
+    .subcommand(get_service_subcommand(
+        "interrupt",
+        "Send SIGINT if the service is running",
+    ))
+    .subcommand(get_service_subcommand(
+        "kill",
+        "Send SIGKILL if the service is running",
+    ))
+    .subcommand(
+        get_base_app_struct("list", "List services")
+            .arg(Arg::new("all").long("all").short('a'))
+            .arg(Arg::new("all").long("all").short('a'))
+            .arg(Arg::new("up").long("up").short('u'))
+            .arg(Arg::new("down").long("down"))
+            .arg(Arg::new("enabled").long("enabled").short('e'))
+            .arg(Arg::new("disabled").long("disabled").short('d')),
+    )
 }

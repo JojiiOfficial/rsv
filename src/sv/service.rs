@@ -38,10 +38,10 @@ pub enum ServiceFile {
 
     // supervise
     // files
-    PID,
+    Pid,
     Control,
     Lock,
-    OK,
+    Ok,
     Stat,
     Status,
     Check,
@@ -54,10 +54,10 @@ impl ServiceFile {
             ServiceFile::Down => "down",
             ServiceFile::Finish => "finish",
             ServiceFile::Check => "supervise/check",
-            ServiceFile::PID => "supervise/pid",
+            ServiceFile::Pid => "supervise/pid",
             ServiceFile::Control => "supervise/control",
             ServiceFile::Lock => "supervise/lock",
-            ServiceFile::OK => "supervise/ok",
+            ServiceFile::Ok => "supervise/ok",
             ServiceFile::Stat => "supervise/stat",
             ServiceFile::Status => "supervise/status",
         }

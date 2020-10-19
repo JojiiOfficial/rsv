@@ -48,3 +48,25 @@ impl SvCommandType {
         Some(res)
     }
 }
+
+impl From<&str> for SvCommandType {
+    fn from(s: &str) -> SvCommandType {
+        match s {
+            "enable" => SvCommandType::Enable,
+            "disable" => SvCommandType::Disable,
+            "start" => SvCommandType::Up,
+            "stop" => SvCommandType::Down,
+            "status" => SvCommandType::Status,
+            "restart" => SvCommandType::Restart,
+            "once" => SvCommandType::Once,
+            "pause" => SvCommandType::Pause,
+            "continue" => SvCommandType::Continue,
+            "term" => SvCommandType::Terminate,
+            "hup" => SvCommandType::Hangup,
+            "alarm" => SvCommandType::Alarm,
+            "interrupt" => SvCommandType::Interrupt,
+            "kill" => SvCommandType::Kill,
+            _ => unreachable!(),
+        }
+    }
+}
