@@ -11,36 +11,35 @@ use clap::{App, ArgMatches};
 // Run the app
 pub fn run(opts: App) -> Result<String, Box<dyn error::Error>> {
     let config = Config::new()?;
-
     let app = opts.get_matches();
 
-    if let Some(subcommand) = app.subcommand_matches("list") {
-        return run_list_command(config, subcommand);
+    // Get current subcommand
+    let (subcommand, matches) = app
+        .subcommand()
+        .ok_or("No subcommand provided".to_owned())?;
+
+    if subcommand == "list" {
+        return run_list_command(config, matches);
     }
 
-    let (service, cmd_type) = parse_subcommands(config, &app);
+    // New service from App arg
+    let service = Service::new(
+        matches
+            .value_of("service")
+            .ok_or("Service arg missing")?
+            .to_owned(),
+        config,
+        ServiceSrc::RunSvDir,
+    );
 
     // Run the actual command
     service.run(
-        cmd_type,
+        SvCommandType::from(subcommand),
         Duration::from_secs(app.value_of("timeout").unwrap_or("7").parse::<u64>()?),
     )
 }
 
-// Parse the subcommands
-fn parse_subcommands(config: Config, matches: &ArgMatches) -> (Service, SvCommandType) {
-    let (subcommand, matches) = matches.subcommand().unwrap();
-
-    (
-        Service::new(
-            matches.value_of("service").unwrap().to_owned(),
-            config,
-            ServiceSrc::RunSvDir,
-        ),
-        SvCommandType::from(subcommand),
-    )
-}
-
+// Run the list subcommand
 pub fn run_list_command(
     config: Config,
     matches: &ArgMatches,
@@ -83,8 +82,8 @@ fn format_services(services: Vec<Service>) -> String {
     for item in services {
         let status = item.read_status();
 
-        if !status.is_ok() {
-            return format!("{}", status.err().unwrap());
+        if let Err(err) = status {
+            return format!("{}", err);
         }
 
         s.push_str(format!("{}", item.format_status(status.unwrap())).as_str());
