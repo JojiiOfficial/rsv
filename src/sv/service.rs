@@ -1,5 +1,5 @@
-use crate::cmdtype::SvCommandType;
-use crate::status::{ServiceState, ServiceStatus};
+use super::cmdtype::SvCommandType;
+use super::status::{ServiceState, ServiceStatus};
 
 use std::error;
 use std::ffi::OsString;
@@ -12,8 +12,8 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
-use crate::error::Error as err;
-use config::Config;
+use super::error::Error as err;
+use crate::config::Config;
 
 // A sv command
 #[derive(Debug)]

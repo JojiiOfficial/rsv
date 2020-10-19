@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde_derive::{Deserialize, Serialize};
 
 use std::env;
 use std::error;
@@ -6,9 +6,7 @@ use std::fs::{self, create_dir_all, File};
 use std::io::{self, stdin, Error, Write};
 use std::path::{self, Path};
 use std::process;
-
-use sys_info;
-use sysinfo::SystemExt;
+use sysinfo::{ProcessExt, SystemExt};
 
 pub const DEFAULT_CONF_PATH: &str = "/etc/runitsv/";
 pub const DEFAULT_CONF_FILE: &str = "default.conf";
@@ -139,9 +137,9 @@ fn init_svdir(config: &mut Config) -> bool {
 
     let sys = sysinfo::System::new();
     let a = sys
-        .get_process_list()
+        .get_processes()
         .iter()
-        .find(|(_, v)| v.name.contains("runsvdir"));
+        .find(|(_, v)| v.name().contains("runsvdir"));
 
     let not_found_err = || {
         println!("Can't find runsvdir! make sure you have a running 'runsvdir' process!");
@@ -153,7 +151,7 @@ fn init_svdir(config: &mut Config) -> bool {
     }
 
     let mut was_p = false;
-    for arg in a.unwrap().1.cmd.iter() {
+    for arg in a.unwrap().1.cmd().iter() {
         if arg == "-P" {
             was_p = true;
             continue;
