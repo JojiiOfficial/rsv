@@ -39,7 +39,6 @@ impl Default for Config {
                     "artix" => service_path = String::from("/etc/runit/sv/"),
                     "void" => service_path = String::from("/etc/sv/"),
                     // TODO add other runit based distros
-                    //
                     _ => {
                         return Err(sys_info::Error::IO(Error::new(io::ErrorKind::NotFound, "")));
                     }

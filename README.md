@@ -1,54 +1,68 @@
 # rsv
-The runit sv command rewritten in rust with additional features.
+The runit sv command rewritten in rust with nice new features.
 
 # Additional features
-- Enable/Disable services (automatically creating a symlink)
+- Enable/Disable services (automatically creating the symlink)
 - Listing services
 - Custom timeout
 - Much cleaner code than the original sv command
+- Automatically use sudo (like yay) (Planned, not yet implemented)
 
 # Installation
 ### Required
-Rust Programming Language Installed.
-### Manually
-Run `make release` and `sudo make install`.<br>
+Rust programming language installed.
 
-### Artix linux (AUR)
+### From git
+```
+git clone https://github.com/JojiiOfficial/rsv
+cd rsv
+cargo build --release
+```
+
+### From [crates.io](https://crates.io/crates/rsv)
+`cargo install rsv`
+
+### From my [pacman repository](https://repo.jojii.de)
+(Add the repo like descripted)<br>
+`pacman -S rsv`
+
+### AUR
 `yay -S rsv` (Other AUR helpers will work too)
 
 # Usage
 ```txt
 rsv 1.1.0
+Jojii S
 A tool to maintain runit services like systemd services
 
 USAGE:
-    rsv [FLAGS] [OPTIONS] <SUBCOMMAND>
+    rsv [FLAGS] [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
     -h, --help       Prints help information
+    -v, --verbose    
     -V, --version    Prints version information
-    -v, --verbose
 
 OPTIONS:
-    -t, --timeout <timeout>
+    -t, --timeout <timeout>    
 
 SUBCOMMANDS:
-    alarm        Send SIGALARM if service is running
-    continue     Send SIGCONT if service is running
-    disable      Disable a service
-    enable       Enable a service
-    help         Prints this message or the help of the given subcommand(s)
-    hup          Send SIGHUP if service is running
-    interrupt    Send SIGINT if service is running
-    kill         Send SIGKILL if service is running
     list         List services
-    once         Start if service is not running. Do not restart if it stops
-    pause        Send SIGSTOP if service is running
-    restart      Restart a service
+    enable       Enable a service
+    disable      Disable a service
     start        Start a service
-    status       Status a service
     stop         Stop a service
-    term         Send SIGTERM if service is running
+    restart      Restart a service
+    kill         Send SIGKILL if the service is running
+    pause        Send SIGSTOP if the service is running
+    continue     Send SIGCONT if the service is running
+    alarm        Send SIGALARM if the service is running
+    help         Prints this message or the help of the given subcommand(s)
+    hup          Send SIGHUP if the service is running
+    interrupt    Send SIGINT if the service is running
+    once         Start if service is not running. Do not restart if it stops
+    status       Get the status of a service
+    term         Send SIGTERM if the service is running
 ```
 
 # Examples
@@ -70,5 +84,5 @@ sudo rsv start cupsd # start cupsd service (enable if service is disabled)
 
 # TODO
 - [x] Listing services
-- [ ] Shell completion
-- [ ] Improving Envar usage (Fix multiuser support)
+- [x] Shell completion
+- [ ] Auto sudo
