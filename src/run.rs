@@ -6,12 +6,11 @@ use crate::sv::cmdtype::SvCommandType;
 use crate::sv::service::{Service, ServiceSrc};
 use crate::sv::status::ServiceState;
 
-use clap::{App, ArgMatches};
+use clap::ArgMatches;
 
 // Run the app
-pub fn run(opts: App) -> Result<String, Box<dyn error::Error>> {
+pub fn run(app: &ArgMatches) -> Result<String, Box<dyn error::Error>> {
     let config = Config::new()?;
-    let app = opts.get_matches();
 
     // Get current subcommand
     let (subcommand, matches) = app

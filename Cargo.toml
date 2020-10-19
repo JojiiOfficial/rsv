@@ -6,7 +6,6 @@ edition = "2018"
 description = "The runit sv command rewritten in rust with additional features"
 license = "GPL-3.0"
 readme = "README.md"
-homepage =""
 repository="https://github.com/JojiiOfficial/rsv"
 
 [package.metadata.arch]

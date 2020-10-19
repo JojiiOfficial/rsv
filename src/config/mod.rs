@@ -19,7 +19,6 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        // TODO distro test
         let mut service_path = String::new();
 
         if sys_info::linux_os_release()

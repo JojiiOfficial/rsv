@@ -27,6 +27,12 @@ pub fn get_cli() -> App<'static> {
     .setting(AppSettings::ArgRequiredElseHelp)
     .version(crate_version!())
     .author("Jojii S")
+    .arg(
+        Arg::new("generator")
+            .long("generate")
+            .about("Generate completion scripts for a given type of shell")
+            .possible_values(&["bash", "elvish", "fish", "zsh"]),
+    )
     .arg(Arg::new("verbose").short('v').long("verbose").global(true))
     .arg(
         Arg::new("timeout")
