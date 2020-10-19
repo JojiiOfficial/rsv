@@ -12,7 +12,7 @@ The runit sv command rewritten in rust with nice new features.
 # Installation
 
 ### From my [pacman repository](https://repo.jojii.de)
-(Add the repo like descripted)<br>
+(Add the repo like described)<br>
 `pacman -S rsv`
 
 ### AUR
