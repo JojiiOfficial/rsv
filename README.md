@@ -9,18 +9,6 @@ The runit sv command rewritten in rust with nice new features.
 - Automatically use sudo (like yay) (Planned, not yet implemented)
 
 # Installation
-### Required
-Rust programming language installed.
-
-### From git
-```
-git clone https://github.com/JojiiOfficial/rsv
-cd rsv
-cargo build --release
-```
-
-### From [crates.io](https://crates.io/crates/rsv)
-`cargo install rsv`
 
 ### From my [pacman repository](https://repo.jojii.de)
 (Add the repo like descripted)<br>
@@ -28,6 +16,16 @@ cargo build --release
 
 ### AUR
 `yay -S rsv` (Other AUR helpers will work too)
+
+### From [crates.io](https://crates.io/crates/rsv)
+`cargo install rsv`
+
+### From git
+```
+git clone https://github.com/JojiiOfficial/rsv
+cd rsv
+cargo build --release
+```
 
 # Usage
 ```txt
