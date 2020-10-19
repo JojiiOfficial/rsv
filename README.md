@@ -3,6 +3,7 @@ The runit sv command rewritten in rust with nice new features.
 
 # Additional features
 - Enable/Disable services (automatically creating the symlink)
+- Bash completion
 - Listing services
 - Custom timeout
 - Much cleaner code than the original sv command
