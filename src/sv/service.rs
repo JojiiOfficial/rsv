@@ -103,7 +103,7 @@ impl Service {
 
                 let service_uri = item.unwrap().file_name().into_string().unwrap();
 
-                if services.iter().find(|s| s.uri == service_uri).is_some() {
+                if services.iter().any(|s| s.uri == service_uri) {
                     continue;
                 }
 

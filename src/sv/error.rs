@@ -49,7 +49,7 @@ impl Error {
             Error::ServiceAlreadyEnabled(name) => format!("Service '{}' already enabled", name),
             Error::ServiceAlreadyDisabled(name) => format!("Service '{}' already disabled", name),
             Error::IoError(err) => format!("{}", err),
-            Error::ForceKilled() => format!("killed"),
+            Error::ForceKilled() => "killed".to_string(),
         }
     }
 }

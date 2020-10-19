@@ -53,7 +53,7 @@ impl ServiceState {
 
 impl ServiceStatus {
     pub fn no_state_available() -> ServiceStatus {
-        return ServiceStatus {
+        ServiceStatus {
             pid: 0,
             time: Duration::from_secs(0),
             state: ServiceState::Down,
@@ -61,7 +61,7 @@ impl ServiceStatus {
             paused: false,
             want: Wants::NoWant,
             term: false,
-        };
+        }
     }
 
     pub fn new(service: &Service, buff: [u8; 20]) -> Result<ServiceStatus, Error> {

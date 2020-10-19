@@ -6,7 +6,7 @@ The runit sv command rewritten in rust with nice new features.
 - Listing services
 - Custom timeout
 - Much cleaner code than the original sv command
-- Automatically use sudo (like yay) (Planned, not yet implemented)
+- Automatically use sudo if ran as user (feature: `auto_sudo`. Used by default)
 
 # Installation
 
@@ -83,4 +83,4 @@ sudo rsv start cupsd # start cupsd service (enable if service is disabled)
 # TODO
 - [x] Listing services
 - [x] Shell completion
-- [ ] Auto sudo
+- [x] Auto sudo

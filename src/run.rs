@@ -15,7 +15,10 @@ pub fn run(app: &ArgMatches) -> Result<String, Box<dyn error::Error>> {
     // Get current subcommand
     let (subcommand, matches) = app
         .subcommand()
-        .ok_or("No subcommand provided".to_owned())?;
+        .ok_or_else(|| "No subcommand provided".to_owned())?;
+
+    #[cfg(feature = "auto_sudo")]
+    sudo::escalate_if_needed()?;
 
     if subcommand == "list" {
         return run_list_command(config, matches);
@@ -85,7 +88,7 @@ fn format_services(services: Vec<Service>) -> String {
             return format!("{}", err);
         }
 
-        s.push_str(format!("{}", item.format_status(status.unwrap())).as_str());
+        s.push_str(item.format_status(status.unwrap()).as_str());
     }
 
     s
