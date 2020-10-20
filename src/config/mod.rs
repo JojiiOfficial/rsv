@@ -137,8 +137,8 @@ fn init_svdir(config: &mut Config) -> bool {
     sys.refresh_processes();
 
     if let Some(proc) = sys.get_process_by_name("runsvdir").into_iter().next() {
-        let mut cmd = proc.cmd().into_iter(); // runsvdir -P <dir> [log]
-        if let Some(_) = cmd.next() {
+        let mut cmd = proc.cmd().iter(); // runsvdir -P <dir> [log]
+        if cmd.next().is_some() {
             if let Some(opt) = cmd.next() {
                 if opt == "-P" {
                     if let Some(dir) = cmd.next() {
