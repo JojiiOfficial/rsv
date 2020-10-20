@@ -133,34 +133,25 @@ fn init_svdir(config: &mut Config) -> bool {
         return false;
     }
 
-    let sys = sysinfo::System::new();
-    let a = sys
-        .get_processes()
-        .iter()
-        .find(|(_, v)| v.name().contains("runsvdir"));
+    let mut sys = sysinfo::System::new();
+    sys.refresh_processes();
 
-    let not_found_err = || {
-        println!("Can't find runsvdir! make sure you have a running 'runsvdir' process!");
-        process::exit(1);
-    };
-
-    if a.is_none() {
-        not_found_err();
-    }
-
-    let mut was_p = false;
-    for arg in a.unwrap().1.cmd().iter() {
-        if arg == "-P" {
-            was_p = true;
-            continue;
-        }
-
-        if was_p && !arg.is_empty() && arg.starts_with('/') {
-            config.runsv_dir = arg.clone();
-            return true;
+    if let Some(proc) = sys.get_process_by_name("runsvdir").into_iter().next() {
+        let mut cmd = proc.cmd().into_iter(); // runsvdir -P <dir> [log]
+        if let Some(_) = cmd.next() {
+            if let Some(opt) = cmd.next() {
+                if opt == "-P" {
+                    if let Some(dir) = cmd.next() {
+                        if Path::new(dir).is_dir() {
+                            config.runsv_dir = dir.clone();
+                            return true;
+                        }
+                    }
+                }
+            }
         }
     }
 
-    not_found_err();
-    false
+    println!("Can't find runsvdir! make sure you have a running 'runsvdir' process!");
+    process::exit(1);
 }
