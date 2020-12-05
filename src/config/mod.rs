@@ -84,6 +84,9 @@ impl Config {
     pub fn new() -> Result<Self, Box<dyn error::Error>> {
         let conf_path = path::Path::new(DEFAULT_CONF_PATH);
         if !conf_path.exists() {
+            #[cfg(feature = "auto_sudo")]
+            sudo::escalate_if_needed()?;
+
             create_dir_all(conf_path)?;
         }
 
@@ -104,6 +107,9 @@ impl Config {
         }
 
         if need_save {
+            #[cfg(feature = "auto_sudo")]
+            sudo::escalate_if_needed()?;
+
             settings.save()?;
         }
 
