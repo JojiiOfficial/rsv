@@ -13,13 +13,13 @@ use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
 use super::error::Error as err;
-use crate::config::Config;
+use crate::config::{self, Config};
 
 // A sv command
 #[derive(Debug)]
 pub struct Service {
     pub uri: String,
-    config: Config,
+    config: config::RunSvDir,
     pub src: ServiceSrc,
 }
 
@@ -66,10 +66,10 @@ impl ServiceFile {
 
 impl Service {
     /// Create a new SvCommand object
-    pub fn new(uri: String, settings: Config, src: ServiceSrc) -> Service {
+    pub fn new(uri: String, config: config::RunSvDir , src: ServiceSrc) -> Service {
         Service {
             uri,
-            config: settings,
+            config: config,
             src,
         }
     }
@@ -85,15 +85,13 @@ impl Service {
     pub fn get_all_services(config: Config) -> Result<Vec<Self>, Box<dyn error::Error>> {
         let mut services: Vec<Self> = Vec::new();
 
-        for (dir, src) in [
-            (&config.runsv_dir, ServiceSrc::RunSvDir),
-            (&config.service_path, ServiceSrc::ServiceDir),
-        ]
-        .iter()
-        {
-            let dir_entries = match fs::read_dir(&dir) {
+        for (_, rsv) in config.iter() {
+            let dir_entries = match fs::read_dir(&rsv.runsv_dir) {
                 Ok(de) => de,
-                Err(_) => continue,
+                Err(e) => {
+                    println!("Error: {}", e);
+                    continue
+                },
             };
 
             for item in dir_entries {
@@ -107,7 +105,7 @@ impl Service {
                     continue;
                 }
 
-                services.push(Service::new(service_uri, config.clone(), src.clone()));
+                services.push(Service::new(service_uri, rsv.clone(), ServiceSrc::RunSvDir));
             }
         }
 

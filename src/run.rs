@@ -1,44 +1,51 @@
 use std::error;
 use std::time::Duration;
 
-use crate::config::Config;
+use crate::config::{self,Config};
 use crate::sv::cmdtype::SvCommandType;
 use crate::sv::service::{Service, ServiceSrc};
 use crate::sv::status::ServiceState;
+use crate::sv::error::Error;
 
 use clap::ArgMatches;
 
 // Run the app
 pub fn run(app: &ArgMatches) -> Result<String, Box<dyn error::Error>> {
-    let config = Config::new()?;
 
     // Get current subcommand
     let (subcommand, matches) = app
         .subcommand()
         .ok_or_else(|| "No subcommand provided".to_owned())?;
 
-    #[cfg(feature = "auto_sudo")]
-    sudo::escalate_if_needed()?;
+    if subcommand == "init" {
+        return config::init_config(matches.is_present("overwrite"));
+    }
+
+    let config = config::get()?;
 
     if subcommand == "list" {
         return run_list_command(config, matches);
     }
 
-    // New service from App arg
-    let service = Service::new(
-        matches
-            .value_of("service")
-            .ok_or("Service arg missing")?
-            .to_owned(),
-        config,
-        ServiceSrc::RunSvDir,
-    );
+    let service_name = matches.value_of("service")
+        .ok_or("Service arg missing")?
+        .to_owned();
 
-    // Run the actual command
-    service.run(
-        SvCommandType::from(subcommand),
-        Duration::from_secs(app.value_of("timeout").unwrap_or("7").parse::<u64>()?),
-    )
+    let service_list: Vec<Service> = Service::get_all_services(config)?;
+    
+    match  service_list.into_iter().find(|sn| sn.uri == service_name) {
+        Some(service) => { 
+            // Run the actual command
+            return service.run(
+                SvCommandType::from(subcommand),
+                Duration::from_secs(app.value_of("timeout").unwrap_or("7").parse::<u64>()?),
+            )
+        }
+        None => { // if service not found return error
+            return Err(Box::new(Error::ServiceNotFound(service_name.into())))
+        }
+    }
+
 }
 
 // Run the list subcommand
@@ -46,7 +53,7 @@ pub fn run_list_command(
     config: Config,
     matches: &ArgMatches,
 ) -> Result<String, Box<dyn error::Error>> {
-    Ok(format_services(
+        Ok(format_services(
         Service::get_all_services(config)?
             .into_iter()
             .filter(|f| match f.read_status() {
