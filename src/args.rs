@@ -41,6 +41,16 @@ pub fn get_cli() -> App<'static> {
             .global(true)
             .takes_value(true),
     )
+    .subcommand(
+        App::new("init")
+            .about("Generate configuration using information about system processes")
+            .arg(
+                Arg::new("overwrite")
+                    .long("overwrite")
+                    .short('o')
+                    .about("overwrite current configuration")
+                )
+        )
     .subcommand(get_service_subcommand("enable", "Enable a service"))
     .subcommand(get_service_subcommand("disable", "Disable a service"))
     .subcommand(get_service_subcommand("start", "Start a service"))
@@ -84,7 +94,6 @@ pub fn get_cli() -> App<'static> {
     ))
     .subcommand(
         get_base_app_struct("list", "List services")
-            .arg(Arg::new("all").long("all").short('a'))
             .arg(Arg::new("all").long("all").short('a'))
             .arg(Arg::new("up").long("up").short('u'))
             .arg(Arg::new("down").long("down"))
