@@ -3,7 +3,6 @@ use clap::{crate_version, App, AppSettings, Arg};
 fn get_base_app_struct<S: AsRef<str>>(name: S, about: &'static str) -> App<'static> {
     App::new(name.as_ref().to_string())
         .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::ColoredHelp)
         .about(about.as_ref())
 }
 
