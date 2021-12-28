@@ -142,7 +142,7 @@ fn init_svdir(config: &mut Config) -> bool {
     let mut sys = sysinfo::System::new();
     sys.refresh_processes();
 
-    if let Some(proc) = sys.get_process_by_name("runsvdir").into_iter().next() {
+    if let Some(proc) = sys.process_by_name("runsvdir").into_iter().next() {
         let mut cmd = proc.cmd().iter(); // runsvdir -P <dir> [log]
         if cmd.next().is_some() {
             if let Some(opt) = cmd.next() {
