@@ -28,14 +28,19 @@ fn main() {
 fn generate_completions(generator: &str) {
     let mut app = args::get_cli();
     match generator {
-        "bash" => print_completions::<Bash>(&mut app),
-        "elvish" => print_completions::<Elvish>(&mut app),
-        "fish" => print_completions::<Fish>(&mut app),
-        "zsh" => print_completions::<Zsh>(&mut app),
+        "bash" => print_completions(&mut app, Bash),
+        "elvish" => print_completions(&mut app, Elvish),
+        "fish" => print_completions(&mut app, Fish),
+        "zsh" => print_completions(&mut app, Zsh),
         _ => println!("Unknown generator"),
     }
 }
 
-fn print_completions<G: Generator>(app: &mut App) {
-    generate::<G, _>(app, app.get_name().to_string(), &mut std::io::stdout());
+fn print_completions<G: Generator>(app: &mut App, generator: G) {
+    generate::<G, _>(
+        generator,
+        app,
+        app.get_name().to_string(),
+        &mut std::io::stdout(),
+    );
 }

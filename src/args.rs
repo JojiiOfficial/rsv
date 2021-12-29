@@ -3,7 +3,6 @@ use clap::{crate_version, App, AppSettings, Arg};
 fn get_base_app_struct<S: AsRef<str>>(name: S, about: &'static str) -> App<'static> {
     App::new(name.as_ref().to_string())
         .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::ColoredHelp)
         .about(about.as_ref())
 }
 
@@ -13,7 +12,7 @@ fn get_service_subcommand<S: AsRef<str>>(name: S, about: &'static str) -> App<'s
         .setting(AppSettings::ArgRequiredElseHelp)
         .arg(
             Arg::new("service")
-                .about("Specify the service")
+                .help("Specify the service")
                 .required(true)
                 .takes_value(true),
         )
@@ -30,7 +29,7 @@ pub fn get_cli() -> App<'static> {
     .arg(
         Arg::new("generator")
             .long("generate")
-            .about("Generate completion scripts for a given type of shell")
+            .help("Generate completion scripts for a given type of shell")
             .possible_values(&["bash", "elvish", "fish", "zsh"]),
     )
     .arg(Arg::new("verbose").short('v').long("verbose").global(true))
