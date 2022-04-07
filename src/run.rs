@@ -1,69 +1,67 @@
 use std::error;
 use std::time::Duration;
 
+use crate::args::{Cli, Command, ListArgs};
 use crate::config::Config;
 use crate::sv::cmdtype::SvCommandType;
 use crate::sv::service::{Service, ServiceSrc};
 use crate::sv::status::ServiceState;
 
-use clap::ArgMatches;
-
 // Run the app
-pub fn run(app: &ArgMatches) -> Result<String, Box<dyn error::Error>> {
+pub fn run(cli: Cli) -> Result<String, Box<dyn error::Error>> {
     let config = Config::new()?;
-
-    // Get current subcommand
-    let (subcommand, matches) = app
-        .subcommand()
-        .ok_or_else(|| "No subcommand provided".to_owned())?;
 
     #[cfg(feature = "auto_sudo")]
     sudo::escalate_if_needed()?;
 
-    if subcommand == "list" {
-        return run_list_command(config, matches);
+    if let Command::List(args) = cli.command {
+        return run_list_command(config, args);
     }
 
-    // New service from App arg
-    let service = Service::new(
-        matches
-            .value_of("service")
-            .ok_or("Service arg missing")?
-            .to_owned(),
-        config,
-        ServiceSrc::RunSvDir,
-    );
+    let sv_command_type = SvCommandType::from(&cli.command);
+    let service_name = match cli.command {
+        Command::Enable { service }
+        | Command::Disable { service }
+        | Command::Start { service }
+        | Command::Stop { service }
+        | Command::Restart { service }
+        | Command::Status { service }
+        | Command::Once { service }
+        | Command::Pause { service }
+        | Command::Continue { service }
+        | Command::Term { service }
+        | Command::Hup { service }
+        | Command::Alarm { service }
+        | Command::Interrupt { service }
+        | Command::Kill { service } => service,
+        _ => unreachable!(),
+    };
+    let service = Service::new(service_name, config, ServiceSrc::RunSvDir);
+    let timeout = Duration::from_secs(cli.timeout);
 
-    // Run the actual command
-    service.run(
-        SvCommandType::from(subcommand),
-        Duration::from_secs(app.value_of("timeout").unwrap_or("7").parse::<u64>()?),
-    )
+    service.run(sv_command_type, timeout)
 }
 
 // Run the list subcommand
-pub fn run_list_command(
-    config: Config,
-    matches: &ArgMatches,
-) -> Result<String, Box<dyn error::Error>> {
+pub fn run_list_command(config: Config, args: ListArgs) -> Result<String, Box<dyn error::Error>> {
     Ok(format_services(
         Service::get_all_services(config)?
             .into_iter()
             .filter(|f| match f.read_status() {
                 Ok(status) => {
-                    if matches.is_present("down") && status.state != ServiceState::Down {
+                    if args.down && status.state != ServiceState::Down {
                         return false;
                     }
 
-                    if matches.is_present("enabled") && f.src == ServiceSrc::ServiceDir {
+                    if args.enabled && f.src == ServiceSrc::ServiceDir {
                         return false;
                     }
 
-                    if matches.is_present("disabled") && f.src == ServiceSrc::RunSvDir {
+                    if args.disabled && f.src == ServiceSrc::RunSvDir {
                         return false;
                     }
 
-                    if matches.is_present("up") && status.state != ServiceState::Run {
+                    if args.up && status.state != ServiceState::Run {
                         return false;
                     }
 

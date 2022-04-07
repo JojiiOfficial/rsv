@@ -1,93 +1,138 @@
-use clap::{crate_version, App, AppSettings, Arg};
+use clap::{AppSettings, Args, Parser, Subcommand};
+use clap_complete::Shell;
 
-fn get_base_app_struct<S: AsRef<str>>(name: S, about: &'static str) -> App<'static> {
-    App::new(name.as_ref().to_string())
-        .setting(AppSettings::TrailingVarArg)
-        .about(about.as_ref())
+/// A tool to maintain runit services like systemd services
+#[derive(Debug, Parser)]
+#[clap(version, author = "Jojii S")]
+#[clap(global_setting = AppSettings::DeriveDisplayOrder)]
+pub struct Cli {
+    /// Print more verbose info
+    #[clap(short, long, global = true)]
+    pub verbose: bool,
+
+    /// Timeout for commands in secs
+    #[clap(short, long, global = true, default_value_t = 7)]
+    pub timeout: u64,
+
+    #[clap(subcommand)]
+    pub command: Command,
 }
 
-fn get_service_subcommand<S: AsRef<str>>(name: S, about: &'static str) -> App<'static> {
-    get_base_app_struct(name, about)
-        .about(about.as_ref())
-        .setting(AppSettings::ArgRequiredElseHelp)
-        .arg(
-            Arg::new("service")
-                .help("Specify the service")
-                .required(true)
-                .takes_value(true),
-        )
+#[derive(Debug, Subcommand)]
+pub enum Command {
+    /// Enable a service
+    Enable {
+        /// Service to be enabled
+        service: String,
+    },
+
+    /// Disable a service
+    Disable {
+        /// Service to be disabled
+        service: String,
+    },
+
+    /// Start a service
+    Start {
+        /// Service to be started
+        service: String,
+    },
+
+    /// Stop a service
+    Stop {
+        /// Service to be stopped
+        service: String,
+    },
+
+    /// Restart a service
+    Restart {
+        /// Service to be restarted
+        service: String,
+    },
+
+    /// Get status of a service
+    Status {
+        /// Service to get status of
+        service: String,
+    },
+
+    /// Start if service is not running. Do not restart if it stops.
+    Once {
+        /// Service to be started once
+        service: String,
+    },
+
+    /// Send SIGSTOP if the service is running
+    Pause {
+        /// Service to be paused
+        service: String,
+    },
+
+    /// Send SIGCONT if the service is running
+    Continue {
+        /// Service to be continued
+        service: String,
+    },
+
+    /// Send SIGTERM if the service is running
+    Term {
+        /// Service to be terminated
+        service: String,
+    },
+
+    /// Send SIGHUP if the service is running
+    Hup {
+        /// Service to be hanged up
+        service: String,
+    },
+
+    /// Send SIGALARM if the service is running
+    Alarm {
+        /// Service to send the SIGALARM signal to
+        service: String,
+    },
+
+    /// Send SIGINT if the service is running
+    Interrupt {
+        /// Service to be interrupted
+        service: String,
+    },
+
+    /// Send SIGKILL if the service is running
+    Kill {
+        /// Service to be killed
+        service: String,
+    },
+
+    /// List services
+    List(ListArgs),
+
+    /// Generate completion script for a given shell
+    Completion {
+        /// Shell to generate completion for
+        #[clap(arg_enum)]
+        shell: Shell,
+    },
 }
 
-pub fn get_cli() -> App<'static> {
-    get_base_app_struct(
-        "rsv",
-        "A tool to maintain runit services like systemd services",
-    )
-    .setting(AppSettings::ArgRequiredElseHelp)
-    .version(crate_version!())
-    .author("Jojii S")
-    .arg(
-        Arg::new("generator")
-            .long("generate")
-            .help("Generate completion scripts for a given type of shell")
-            .possible_values(&["bash", "elvish", "fish", "zsh"]),
-    )
-    .arg(Arg::new("verbose").short('v').long("verbose").global(true))
-    .arg(
-        Arg::new("timeout")
-            .short('t')
-            .long("timeout")
-            .global(true)
-            .takes_value(true),
-    )
-    .subcommand(get_service_subcommand("enable", "Enable a service"))
-    .subcommand(get_service_subcommand("disable", "Disable a service"))
-    .subcommand(get_service_subcommand("start", "Start a service"))
-    .subcommand(get_service_subcommand("stop", "Stop a service"))
-    .subcommand(get_service_subcommand("restart", "Restart a service"))
-    .subcommand(get_service_subcommand(
-        "status",
-        "Get the status of a service",
-    ))
-    .subcommand(get_service_subcommand(
-        "once",
-        "Start if service is not running. Do not restart if it stops",
-    ))
-    .subcommand(get_service_subcommand(
-        "pause",
-        "Send SIGSTOP if the service is running",
-    ))
-    .subcommand(get_service_subcommand(
-        "continue",
-        "Send SIGCONT if the service is running",
-    ))
-    .subcommand(get_service_subcommand(
-        "term",
-        "Send SIGTERM if the service is running",
-    ))
-    .subcommand(get_service_subcommand(
-        "hup",
-        "Send SIGHUP if the service is running",
-    ))
-    .subcommand(get_service_subcommand(
-        "alarm",
-        "Send SIGALARM if the service is running",
-    ))
-    .subcommand(get_service_subcommand(
-        "interrupt",
-        "Send SIGINT if the service is running",
-    ))
-    .subcommand(get_service_subcommand(
-        "kill",
-        "Send SIGKILL if the service is running",
-    ))
-    .subcommand(
-        get_base_app_struct("list", "List services")
-            .arg(Arg::new("all").long("all").short('a'))
-            .arg(Arg::new("all").long("all").short('a'))
-            .arg(Arg::new("up").long("up").short('u'))
-            .arg(Arg::new("down").long("down"))
-            .arg(Arg::new("enabled").long("enabled").short('e'))
-            .arg(Arg::new("disabled").long("disabled").short('d')),
-    )
+#[derive(Args, Debug)]
+pub struct ListArgs {
+    #[clap(short, long)]
+    pub all: bool,
+
+    /// List only services that are up
+    #[clap(short, long, group = "up_down")]
+    pub up: bool,
+
+    /// List only services that are down
+    #[clap(short = 'd', long, group = "up_down")]
+    pub down: bool,
+
+    /// List only services that are enabled
+    #[clap(short, long, group = "enabled_disabled")]
+    pub enabled: bool,
+
+    /// List only services that are disabled
+    #[clap(short = 'D', long, group = "enabled_disabled")]
+    pub disabled: bool,
 }

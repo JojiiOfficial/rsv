@@ -1,3 +1,5 @@
+use crate::args::Command;
+
 /// All available Commands
 /// for runsv
 #[derive(Debug)]
@@ -66,6 +68,28 @@ impl From<&str> for SvCommandType {
             "alarm" => SvCommandType::Alarm,
             "interrupt" => SvCommandType::Interrupt,
             "kill" => SvCommandType::Kill,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<&Command> for SvCommandType {
+    fn from(command: &Command) -> Self {
+        match command {
+            Command::Enable { .. } => SvCommandType::Enable,
+            Command::Disable { .. } => SvCommandType::Disable,
+            Command::Start { .. } => SvCommandType::Up,
+            Command::Stop { .. } => SvCommandType::Down,
+            Command::Restart { .. } => SvCommandType::Restart,
+            Command::Status { .. } => SvCommandType::Status,
+            Command::Once { .. } => SvCommandType::Once,
+            Command::Pause { .. } => SvCommandType::Pause,
+            Command::Continue { .. } => SvCommandType::Continue,
+            Command::Term { .. } => SvCommandType::Terminate,
+            Command::Hup { .. } => SvCommandType::Hangup,
+            Command::Alarm { .. } => SvCommandType::Alarm,
+            Command::Interrupt { .. } => SvCommandType::Interrupt,
+            Command::Kill { .. } => SvCommandType::Kill,
             _ => unreachable!(),
         }
     }
